@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Aether OS | Neural Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #09090b;
+      --card: rgba(24, 24, 27, 0.7);
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.5);
+      --text: #e4e4e7;
+      --text-muted: #a1a1aa;
+      --red: #ef4444;
+      --orange: #f59e0b;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: radial-gradient(circle at 50% 0%, #1e1e24, var(--bg));
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+      overflow-x: hidden;
+    }
+
+    .bg-orb {
+      position: fixed; width: 400px; height: 400px;
+      background: var(--accent); filter: blur(150px);
+      opacity: 0.2; border-radius: 50%;
+      top: -100px; left: -100px; z-index: -1;
+      animation: drift 20s infinite alternate;
+    }
+    .bg-orb.two { top: auto; bottom: -100px; left: auto; right: -100px; background: #8b5cf6; }
+    @keyframes drift { 0% { transform: scale(1) translate(0, 0); } 100% { transform: scale(1.2) translate(50px, 50px); } }
+
+    header {
+      width: 100%; max-width: 1300px;
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;
+    }
+
+    h1 {
+      font-weight: 800; font-size: 2.2rem; letter-spacing: -1px;
+      background: linear-gradient(to right, #fff, var(--text-muted));
+      -webkit-background-clip: text; color: transparent;
+    }
+    
+    .status-badge { display: flex; align-items: center; gap: 12px; }
+
+    .pulse-dot { display: inline-block; width: 12px; height: 12px; background: #10b981; border-radius: 50%; box-shadow: 0 0 15px #10b981; animation: pulse 2s infinite; }
+    .pulse-dot.listening { background: #3b82f6; box-shadow: 0 0 15px #3b82f6; }
+    .pulse-dot.speaking { background: #8b5cf6; box-shadow: 0 0 15px #8b5cf6; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+    /* Core Orb Animation */
+    .core-orb-container { display: flex; justify-content: center; align-items: center; margin: 30px 0; }
+    .core-orb {
+      width: 140px; height: 140px; border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #4facfe, #00f2fe);
+      box-shadow: 0 0 30px rgba(0, 242, 254, 0.4), inset 0 0 20px rgba(255,255,255,0.6);
+      transition: all 0.3s ease;
+    }
+    .core-orb.idle { animation: float-idle 4s ease-in-out infinite; }
+    .core-orb.listening {
+      background: radial-gradient(circle at 30% 30%, #43e97b, #38f9d7);
+      box-shadow: 0 0 50px rgba(56, 249, 215, 0.6), inset 0 0 20px rgba(255,255,255,0.6);
+      animation: pulse-listen 1.5s infinite;
+    }
+    .core-orb.speaking {
+      background: radial-gradient(circle at 30% 30%, #fa709a, #fee140);
+      box-shadow: 0 0 60px rgba(250, 112, 154, 0.7), inset 0 0 30px rgba(255,255,255,0.8);
+      animation: pulse-speak 0.4s infinite alternate;
+    }
+
+    @keyframes float-idle {
+      0% { transform: translateY(0px) scale(1); box-shadow: 0 0 20px rgba(0, 242, 254, 0.3); }
+      50% { transform: translateY(-10px) scale(1.05); box-shadow: 0 0 40px rgba(0, 242, 254, 0.6); }
+      100% { transform: translateY(0px) scale(1); box-shadow: 0 0 20px rgba(0, 242, 254, 0.3); }
+    }
+    @keyframes pulse-listen {
+      0% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.8; }
+    }
+    @keyframes pulse-speak {
+      0% { transform: scale(1); box-shadow: 0 0 40px rgba(250, 112, 154, 0.5); }
+      100% { transform: scale(1.15); box-shadow: 0 0 80px rgba(250, 112, 154, 0.9); }
+    }
+
+    .grid { display: grid; grid-template-columns: 1.2fr 2fr 1fr; gap: 30px; width: 100%; max-width: 1300px; }
+
+    .card {
+      background: var(--card); backdrop-filter: blur(12px); border: 1px solid var(--border);
+      border-radius: 20px; padding: 25px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+      transition: all 0.3s ease; height: fit-content;
+    }
+    .card:hover { border-color: rgba(255, 255, 255, 0.2); }
+
+    .panel-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); font-weight: 600; margin-bottom: 20px; }
+
+    .metric-val { font-size: 1.3rem; font-weight: 600; margin-bottom: 20px; text-transform: capitalize; }
+    .code-val { font-family: 'Fira Code', monospace; color: var(--accent); font-size: 0.9rem; margin-bottom: 20px;}
+    .err-val { font-family: 'Fira Code', monospace; color: var(--red); font-size: 0.9rem; margin-bottom: 20px;}
+    .latency-val { font-family: 'Fira Code', monospace; color: var(--orange); font-size: 0.95rem; font-weight: 600; }
+
+    .btn-toggle {
+      width: 100%; padding: 15px; border-radius: 12px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05); color: #fff; font-family: inherit; font-size: 1rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; margin-bottom: 15px;
+    }
+    .btn-toggle:hover { background: rgba(255,255,255,0.1); }
+    .btn-toggle.active { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+    .btn-toggle.dnd.active { background: var(--orange); border-color: var(--orange); box-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
+
+    .logs-container { height: 500px; overflow-y: auto; padding-right: 15px; }
+    .logs-container::-webkit-scrollbar { width: 6px; }
+    .logs-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+    .log-item {
+      padding: 15px; border-radius: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.03);
+      margin-bottom: 12px; font-family: 'Fira Code', monospace; font-size: 0.85rem;
+    }
+    .log-item span.time { color: var(--text-muted); margin-right: 15px; font-size: 0.75rem; }
+    
+    pre { font-family: 'Fira Code', monospace; font-size: 0.8rem; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; overflow-x: auto; color: var(--accent); }
+
+  </style>
+</head>
+<body>
+  <div class="bg-orb"></div>
+  <div class="bg-orb two"></div>
+
+  <header>
+    <h1>Aether OS</h1>
+    <div class="status-badge">
+      <span class="latency-val" id="latency">0.00s</span>
+      <span style="font-weight: 600; font-size:1.1rem; color: var(--text-muted); margin: 0 10px;">|</span>
+      <span class="pulse-dot" id="pulse"></span>
+      <span id="status-title" style="font-weight: 600; font-size:1.1rem; color: var(--text-muted)">System Idle</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="column">
+      <div class="card" style="margin-bottom: 30px;">
+        <div class="core-orb-container">
+            <div class="core-orb idle" id="main-orb"></div>
+        </div>
+        
+        <div class="panel-title">Diagnostic Trace</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Current State:</div>
+        <div class="metric-val" id="status">Idle</div>
+        
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Neural Engine Trace:</div>
+        <div class="code-val" id="thought">Awaiting input...</div>
+        
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Last Action:</div>
+        <div class="code-val" id="action">None</div>
+
+        <div id="err-container" style="display:none;">
+          <div style="font-size: 0.8rem; color: var(--red);">Critical Failure:</div>
+          <div class="err-val" id="error"></div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="panel-title">Engine Directives</div>
+        <button id="toggleAutoBtn" class="btn-toggle active" onclick="toggleAuto()">Autonomous: ON</button>
+        <button id="toggleDNDBtn" class="btn-toggle dnd" onclick="toggleDND()">DND: OFF</button>
+      </div>
+    </div>
+
+    <div class="column">
+      <div class="card">
+        <div class="panel-title">Execution Logs</div>
+        <div class="logs-container" id="logs"></div>
+      </div>
+    </div>
+
+    <div class="column">
+      <div class="card">
+        <div class="panel-title">Cognitive Memory Bank</div>
+        <pre id="memory">{}</pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function fetchData() {
+      try {
+        let res = await fetch("http://127.0.0.1:8000/status");
+        let data = await res.json();
+        
+        let stat = data.status;
+        document.getElementById("status").innerText = stat;
+        document.getElementById("status-title").innerText = stat === 'idle' ? 'System Idle' : 'System Active';
+        
+        let p = document.getElementById("pulse");
+        let orb = document.getElementById("main-orb");
+        
+        if(stat.includes("listening")) { 
+            p.className = "pulse-dot listening"; 
+            orb.className = "core-orb listening";
+        }
+        else if(stat.includes("speaking")) { 
+            p.className = "pulse-dot speaking"; 
+            orb.className = "core-orb speaking";
+        }
+        else { 
+            p.className = "pulse-dot"; 
+            orb.className = "core-orb idle";
+        }
+
+        document.getElementById("action").innerText = data.last_action || 'None';
+        document.getElementById("thought").innerText = data.thought || 'Awaiting input...';
+        document.getElementById("latency").innerText = data.latency;
+        
+        let errBox = document.getElementById("err-container");
+        if(data.error) {
+            errBox.style.display = "block";
+            document.getElementById("error").innerText = data.error;
+        } else {
+            errBox.style.display = "none";
+        }
+
+        let autoBtn = document.getElementById("toggleAutoBtn");
+        autoBtn.className = data.autonomy ? "btn-toggle active" : "btn-toggle";
+        autoBtn.innerText = data.autonomy ? "Autonomous: ON" : "Autonomous: OFF";
+
+        let dndBtn = document.getElementById("toggleDNDBtn");
+        dndBtn.className = data.dnd ? "btn-toggle dnd active" : "btn-toggle dnd";
+        dndBtn.innerText = data.dnd ? "DND: ON" : "DND: OFF";
+
+        let logs = document.getElementById("logs");
+        logs.innerHTML = "";
+        data.logs.forEach(l => {
+          let li = document.createElement("div");
+          li.className = "log-item";
+          let d = new Date();
+          let timeNow = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0') + ':' + d.getSeconds().toString().padStart(2, '0');
+          li.innerHTML = `<span class="time">[${timeNow}]</span> ${l}`;
+          logs.appendChild(li);
+        });
+
+        // Safe JSON parsing for memory
+        document.getElementById("memory").innerText = JSON.stringify(data.memory, null, 2);
+
+      } catch(e) {
+        console.error("Dashboard backend disconnected.");
+      }
+    }
+
+    async function toggleAuto() {
+      await fetch("http://127.0.0.1:8000/toggle_autonomy", {method: "POST"});
+      fetchData();
+    }
+
+    async function toggleDND() {
+      await fetch("http://127.0.0.1:8000/toggle_dnd", {method: "POST"});
+      fetchData();
+    }
+
+    setInterval(fetchData, 1000);
+    fetchData();
+  </script>
+</body>
+</html>

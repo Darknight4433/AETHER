@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.DS_Store
+temp_screen.png
+data/memory.json
+data/memory_state.json
+assets/end_call.png
+__AETHER_SANDBOX__/

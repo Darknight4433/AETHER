@@ -1,0 +1,28 @@
+# ─── AETHER REQUIREMENTS ────────────────────────────────────────────────────
+# Core dependencies for the Aether WhatsApp-Call AI Assistant
+
+# ── Screen Vision ──────────────────────────────────────────────────────────
+opencv-python>=4.9.0
+Pillow>=10.3.0
+mss>=9.0.1                    # Fast multi-monitor screenshot capture
+pyautogui>=0.9.54            # Mouse/keyboard automation
+
+# ── Speech-to-Text (STT) ───────────────────────────────────────────────────
+openai-whisper>=20231117     # Whisper STT (local)
+sounddevice>=0.4.6           # Audio input
+numpy>=1.26.0
+
+# ── Text-to-Speech (TTS) ───────────────────────────────────────────────────
+elevenlabs>=1.2.0            # ElevenLabs TTS API
+pygame>=2.5.0                # Audio playback
+
+# ── LLM Brain ──────────────────────────────────────────────────────────────
+ollama>=0.2.0                # Ollama Python client
+
+# ── Utilities ──────────────────────────────────────────────────────────────
+python-dotenv>=1.0.0         # .env config management
+pynput>=1.7.6                # Mouse/keyboard listener
+pywin32>=306                 # Windows-specific APIs (window detection)
+colorama>=0.4.6              # Colored terminal output
+rich>=13.7.0                 # Rich terminal UI
+loguru>=0.7.2                # Advanced logging
