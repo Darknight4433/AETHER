@@ -1,6 +1,7 @@
 import ollama
 from loguru import logger
 import core.memory as memory
+from ui.state import state
 
 class Brain:
     def __init__(self, host="http://localhost:11434", model="llama3", system_prompt=None):
@@ -26,6 +27,7 @@ class Brain:
 
     def generate_response(self, user_text):
         """Sends user text to Ollama and returns the assistant's reply."""
+        state["status"] = "thinking"
         logger.info(f"Thinking...")
         try:
             recent_memory = memory.get_context()
@@ -59,9 +61,11 @@ User said: {user_text}"""
             # Save to persistent memory
             memory.save(user_text, reply_text)
             
+            state["status"] = "idle"
             logger.success(f"Aether: {reply_text}")
             return reply_text
             
         except Exception as e:
+            state["status"] = "idle"
             logger.error(f"Ollama error: {e}")
             return "I'm sorry, I'm having trouble thinking right now."

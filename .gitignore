@@ -9,3 +9,4 @@ data/memory.json
 data/memory_state.json
 assets/end_call.png
 __AETHER_SANDBOX__/
+*.log

@@ -1,8 +1,17 @@
 import os
+import sys
+
+# Ensure the working directory is explicitly set to the directory containing main.py
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+os.chdir(BASE_DIR)
+
 import time
 import threading
 from dotenv import load_dotenv
 from loguru import logger
+
+# Establish permanent trace log
+logger.add("aether.log", rotation="10 MB", level="INFO")
 
 # Import Core Systems
 from core.vision import VisionSystem
@@ -16,6 +25,7 @@ from core.agent import execute_plan
 from core.safety import is_safe
 from core.autonomy import autonomy_loop
 from ui.state import state, update_log
+from core.tray import run_tray
 
 # Load Environment Variables
 load_dotenv()
@@ -80,11 +90,32 @@ class AetherController:
         # Start autonomy thread (Phase 14)
         threading.Thread(target=autonomy_loop, args=(self.speech_engine, self.audio_interface), daemon=True).start()
 
+        # DEMO BYPASS: Auto-start conversation without waiting for a WhatsApp call
+        def auto_start():
+            time.sleep(3)
+            if not self.call_active:
+                logger.warning("DEMO MODE: Bypassing WhatsApp detector. Starting Aether...")
+                self.call_active = True
+                threading.Thread(target=self._conversation_loop, daemon=True).start()
+        threading.Thread(target=auto_start, daemon=True).start()
+
         # Keep main thread alive
         try:
+            pulse_clock = 0
             while True:
+                pulse_clock += 5
+                if pulse_clock >= 30:
+                    logger.debug("Heartbeat: Native daemon is alive and polling actively.")
+                    pulse_clock = 0
+                    
+                if os.path.exists("STOP_AETHER"):
+                    logger.warning("💀 STOP_AETHER hardware kill switch detected! Hard aborting daemon.")
+                    logger.info("========== AETHER MODULE OFFLINE (SESSION SHUTDOWN) ==========")
+                    os.remove("STOP_AETHER")  # Reset switch for next boot
+                    os._exit(0)
                 time.sleep(5)
         except KeyboardInterrupt:
+            logger.info("========== AETHER MODULE OFFLINE (SESSION TERMINATED) ==========")
             logger.info("Aether shutting down manually.")
 
     def _detector_loop(self):
@@ -156,6 +187,25 @@ class AetherController:
                 self.speech_engine.speak_async("Task completed.")
                 continue
 
+            # 🔥 Sub-second Fast Path Intercept
+            from core.fast_router import match_fast_command
+            from actions.environments import deep_work, start_dev
+            from actions.system_fast import mute, screenshot, get_time
+            
+            fast_action = match_fast_command(user_text)
+            if fast_action:
+                logger.success(f"⚡ FAST PATH ACTIVATED: {fast_action}")
+                response = ""
+                if fast_action == "DEEP_WORK": response = deep_work()
+                elif fast_action == "START_DEV": response = start_dev()
+                elif fast_action == "MUTE": response = mute()
+                elif fast_action == "SCREENSHOT": response = screenshot()
+                elif fast_action == "TIME": response = get_time()
+                
+                if response:
+                    self.speech_engine.speak_async(response)
+                continue
+
             # Intent Detection & Routing (Phase 10 / Single-step)
             intent = detect_intent(user_text)
             
@@ -180,6 +230,53 @@ class AetherController:
         logger.info("Call ended or conversation loop exited. Resetting state.")
         self.call_active = False
 
+def preflight():
+    """Initial hardware and network polling sequence."""
+    required = [".env", "config", "data"]
+    for r in required:
+        if not os.path.exists(r):
+            logger.error(f"Missing required component: {r}. Aborting boot.")
+            print(f"Missing: {r}")
+            return False
+    return True
+
 if __name__ == "__main__":
-    aether = AetherController()
-    aether.run()
+    import socket
+    def is_running():
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # Prevent ghost locks
+        try:
+            s.bind(("127.0.0.1", 65432))
+            return False, s # Keep socket open during process lifetime
+        except Exception:
+            return True, None
+
+    running, lock_sock = is_running()
+    if running:
+        logger.error("Aether OS is already actively bound! Aborting duplicate boot.")
+        exit(0)
+
+    logger.info("Initiating 10-second pre-boot delay awaiting hardware network attachments...")
+    time.sleep(10)
+
+    if not preflight():
+        exit(1)
+        
+    logger.success("Aether Booted via Startup Hook ⚡")
+    
+    # Start tray in background
+    threading.Thread(target=run_tray, daemon=True).start()
+        
+    if os.path.exists("SAFE_MODE"):
+        logger.info("SAFE_MODE File Detected! Overriding system intelligence to Safe State (Autonomy: OFF)")
+        state["autonomy"] = False
+        
+    logger.info("========== AETHER OS ACTIVE (SESSION START) ==========")    
+    while True:
+        try:
+            logger.info("Spooling up Aether Core Runtime...")
+            aether = AetherController()
+            aether.run()
+        except Exception as e:
+            logger.error(f"CRITICAL SYSTEM CRASH: {e}. Initiating daemon auto-restart...")
+            time.sleep(5)

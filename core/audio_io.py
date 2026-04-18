@@ -7,6 +7,7 @@ from loguru import logger
 import tempfile
 import soundfile as sf
 import os
+from ui.state import state
 
 class AudioInterface:
     def __init__(self, model_size="base", device_index=None, silence_threshold=500, silence_duration=1.5):
@@ -36,6 +37,7 @@ class AudioInterface:
         Then transcribes the recorded audio.
         """
         q = queue.Queue()
+        state["status"] = "listening"
         
         def audio_callback(indata, frames, time, status):
             if status:
@@ -88,6 +90,7 @@ class AudioInterface:
 
         # If they spoke for less than 0.5 seconds, probably just noise
         if not audio_data or (time.time() - started_talking_time < 0.5):
+            state["status"] = "idle"
             return ""
 
         # Concatenate chunks
@@ -103,9 +106,11 @@ class AudioInterface:
             result = self.model.transcribe(temp_path, fp16=False)
             text = result["text"].strip()
             logger.info(f"User Transcribed: {text}")
+            state["status"] = "idle"
             return text
         except Exception as e:
             logger.error(f"Whisper transcription error: {e}")
+            state["status"] = "idle"
             return ""
         finally:
             if os.path.exists(temp_path):
