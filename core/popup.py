@@ -31,22 +31,23 @@ class PopupApi:
         state["active"] = False
 
 def _apply_native_flags(window):
-    """Apply WS_EX_TOOLWINDOW to remove from Alt+Tab and fix to topmost."""
-    try:
-        # Find window handle
-        hwnd = win32gui.FindWindow(None, 'Aether Panel')
-        if not hwnd:
-            return
-            
-        ex_style = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
-        win32gui.SetWindowLong(
-            hwnd,
-            win32con.GWL_EXSTYLE,
-            ex_style | win32con.WS_EX_TOOLWINDOW | win32con.WS_EX_TOPMOST
-        )
-        logger.debug("Native Windows flags applied (Hidden from Alt+Tab)")
-    except Exception as e:
-        logger.warning(f"Failed to apply native window flags: {e}")
+    """Apply WS_EX_TOOLWINDOW with a retry loop to ensure window handle is found."""
+    for _ in range(10): # Retry for ~1 second
+        try:
+            hwnd = win32gui.FindWindow(None, 'Aether Panel')
+            if hwnd:
+                ex_style = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
+                win32gui.SetWindowLong(
+                    hwnd,
+                    win32con.GWL_EXSTYLE,
+                    ex_style | win32con.WS_EX_TOOLWINDOW | win32con.WS_EX_TOPMOST
+                )
+                logger.debug("Native Windows flags applied (Hidden from Alt+Tab)")
+                return
+        except Exception:
+            pass
+        time.sleep(0.1)
+    logger.warning("Failed to apply native window flags: Window handle not found.")
 
 def _position_window(window):
     """Align window to bottom-right corner above system tray."""

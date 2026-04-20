@@ -139,7 +139,7 @@ class AetherController:
             
             # 1. State Deadlock Protection: If stuck in 'thinking', 'listening', or 'speaking' for >20s, force reset
             if current_status != "idle" and (time.time() - last_audio_change > 20):
-                logger.warning(f"⚠️ Detecting state deadlock ({current_status}). Forcing state recovery...")
+                logger.warning(f"[WATCHDOG] Detecting state deadlock ({current_status}). Forcing state recovery...")
                 self.reset_state()
                 last_audio_change = time.time()
 
@@ -164,14 +164,14 @@ class AetherController:
         state["waveform"] = [0]*64
         state["intent_flash"] = False
         state["assistant_text"] = ""
-        logger.info("♻️ System state has been forcibly reset.")
+        logger.info("[RECOVERY] System state has been forcibly reset.")
 
     def _detector_loop(self):
         """Background thread that continuously scans for an incoming call."""
         while True:
             if not self.call_active:
                 if self.vision.detect_and_click_accept(confidence_threshold=0.75):
-                    logger.success("📞 Call matched and accepted! Initializing conversation thread...")
+                    logger.success("Call matched and accepted! Initializing conversation thread...")
                     self.call_active = True
                     threading.Thread(target=self._conversation_loop, daemon=True).start()
             time.sleep(0.5)
