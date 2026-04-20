@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 
 # Ensure the working directory is explicitly set to the directory containing main.py
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -11,7 +12,16 @@ from dotenv import load_dotenv
 from loguru import logger
 
 # Establish permanent trace log
-logger.add("aether.log", rotation="10 MB", level="INFO")
+if sys.platform == "win32":
+    try:
+        import sys
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+    except Exception:
+        pass
+
+logger.add("aether.log", rotation="10 MB", level="INFO", encoding="utf-8")
 
 # Import Core Systems
 from core.vision import VisionSystem
@@ -22,10 +32,14 @@ from core.intent import detect_intent
 from core.router import route
 from core.planner import create_plan
 from core.agent import execute_plan
-from core.safety import is_safe
+from core.safety_guard import authorize, is_safe
 from core.autonomy import autonomy_loop
+from core.hotkey import start_hotkey_listener
+from core.hud import start_hud
+from core.intent_visuals import trigger_intent_flash
 from ui.state import state, update_log
 from core.tray import run_tray
+import socket
 
 # Load Environment Variables
 load_dotenv()
@@ -80,43 +94,77 @@ class AetherController:
             uvicorn.run("ui.server:app", host="127.0.0.1", port=8000, log_level="error")
         threading.Thread(target=start_dashboard, daemon=True).start()
         
-        print("Aether OS v1.0 — Online ⚡")
-        logger.info("Aether OS v1.0 Dashboard running on http://127.0.0.1:8000/ ⚡")
+        print("Aether OS v1.0 - Online")
+        logger.info("Aether OS v1.0 Dashboard running on http://127.0.0.1:8000/")
         update_log("Aether Core Online")
         
         # Start detector thread
         threading.Thread(target=self._detector_loop, daemon=True).start()
         
-        # Start autonomy thread (Phase 14)
+        # Start hotkey listener daemon
+        threading.Thread(target=self._hotkey_daemon, daemon=True).start()
+
+        # Start autonomy thread
         threading.Thread(target=autonomy_loop, args=(self.speech_engine, self.audio_interface), daemon=True).start()
 
-        # DEMO BYPASS: Auto-start conversation without waiting for a WhatsApp call
+        # DEMO BYPASS
         def auto_start():
             time.sleep(3)
             if not self.call_active:
-                logger.warning("DEMO MODE: Bypassing WhatsApp detector. Starting Aether...")
+                logger.warning("DEMO MODE: Starting Aether (Silent)...")
                 self.call_active = True
                 threading.Thread(target=self._conversation_loop, daemon=True).start()
         threading.Thread(target=auto_start, daemon=True).start()
 
-        # Keep main thread alive
-        try:
-            pulse_clock = 0
-            while True:
-                pulse_clock += 5
-                if pulse_clock >= 30:
-                    logger.debug("Heartbeat: Native daemon is alive and polling actively.")
-                    pulse_clock = 0
-                    
+        # System watchdog
+        threading.Thread(target=self._system_watchdog, daemon=True).start()
+
+        # Start the popup system on the main thread (blocks here)
+        from core.popup import init_popup
+        init_popup()
+
+    def _system_watchdog(self):
+        tick = 0
+        last_audio_change = time.time()
+        last_known_status = state["status"]
+        
+        while True:
+            tick += 1
+            current_status = state["status"]
+            
+            # Reset deadlock timer if status changes
+            if current_status != last_known_status:
+                last_audio_change = time.time()
+                last_known_status = current_status
+            
+            # 1. State Deadlock Protection: If stuck in 'thinking', 'listening', or 'speaking' for >20s, force reset
+            if current_status != "idle" and (time.time() - last_audio_change > 20):
+                logger.warning(f"⚠️ Detecting state deadlock ({current_status}). Forcing state recovery...")
+                self.reset_state()
+                last_audio_change = time.time()
+
+            # 2. Kill-switch check (~10s)
+            if tick % 2 == 0:
                 if os.path.exists("STOP_AETHER"):
-                    logger.warning("💀 STOP_AETHER hardware kill switch detected! Hard aborting daemon.")
-                    logger.info("========== AETHER MODULE OFFLINE (SESSION SHUTDOWN) ==========")
-                    os.remove("STOP_AETHER")  # Reset switch for next boot
+                    logger.warning("STOP_AETHER hardware kill switch detected! Hard aborting daemon.")
+                    os.remove("STOP_AETHER")
                     os._exit(0)
-                time.sleep(5)
-        except KeyboardInterrupt:
-            logger.info("========== AETHER MODULE OFFLINE (SESSION TERMINATED) ==========")
-            logger.info("Aether shutting down manually.")
+            
+            # 3. Heartbeat
+            if tick % 6 == 0: # Every 30s
+                logger.debug(f"Heartbeat: Controller OK | State: {current_status}")
+                tick = 0
+
+            time.sleep(5)
+
+    def reset_state(self):
+        """Force system back to a clean idle state."""
+        state["status"] = "idle"
+        state["audio_level"] = 0.0
+        state["waveform"] = [0]*64
+        state["intent_flash"] = False
+        state["assistant_text"] = ""
+        logger.info("♻️ System state has been forcibly reset.")
 
     def _detector_loop(self):
         """Background thread that continuously scans for an incoming call."""
@@ -127,6 +175,118 @@ class AetherController:
                     self.call_active = True
                     threading.Thread(target=self._conversation_loop, daemon=True).start()
             time.sleep(0.5)
+
+    def _hotkey_daemon(self):
+        """
+        On-demand activation daemon with speaker identification.
+        Hotkey → listen → identify speaker → check permissions → execute.
+        """
+        import tempfile
+        from core.voice_id import identify
+        from core.permissions import check_permission
+        
+        while True:
+            try:
+                # Stay idle unless triggered by hotkey
+                if not state.get("active"):
+                    time.sleep(0.2)
+                    continue
+                
+                # Hotkey was pressed - activate listening
+                if state.get("force_listen"):
+                    state["force_listen"] = False
+                    state["status"] = "listening"
+                    logger.success("🎤 Listening via hotkey...")
+                    
+                    # Single listen operation
+                    user_text = self.audio_interface.listen_and_transcribe()
+                    
+                    if user_text:
+                        logger.info(f"User (hotkey): {user_text}")
+                        state["user_text"] = user_text
+                        state["status"] = "thinking"
+                        
+                        # 🔐 VOICE IDENTIFICATION STEP
+                        # Try to identify speaker (if profiles exist)
+                        speaker = "unknown"
+                        confidence = 0.0
+                        
+                        try:
+                            # Re-record for identification (better approach: use same recording)
+                            # For now, we identify from the transcription context
+                            # In production, you'd save audio during listen_and_transcribe
+                            from core.voice_id import get_all_speakers
+                            enrolled_speakers = get_all_speakers()
+                            
+                            if enrolled_speakers:
+                                # Note: Ideally audio_interface would return temp path
+                                # For now, we identify based on enrolled profiles
+                                logger.info(f"Enrolled speakers: {enrolled_speakers}")
+                                # Full voice ID integration would happen here
+                                speaker = "unknown"  # TODO: integrate with audio capture
+                            
+                            state["speaker"] = speaker
+                            state["speaker_confidence"] = confidence
+                            logger.info(f"Speaker: {speaker} (confidence: {confidence:.2f})")
+                        except Exception as e:
+                            logger.warning(f"Voice ID check failed: {e}")
+                            speaker = "unknown"
+                            state["speaker"] = speaker
+                        
+                        # Fast path check
+                        from core.fast_router import match_fast_command
+                        from actions.environments import deep_work, start_dev
+                        from actions.system_fast import mute, screenshot, get_time
+                        
+                        fast_action = match_fast_command(user_text)
+                        response = None
+                        
+                        if fast_action:
+                            # 🔐 CHECK PERMISSIONS before executing
+                            allowed, perm_msg = check_permission(fast_action, speaker)
+                            
+                            if allowed:
+                                trigger_intent_flash(fast_action)
+                                logger.success(f"⚡ FAST PATH: {fast_action}")
+                                if fast_action == "DEEP_WORK": response = deep_work()
+                                elif fast_action == "START_DEV": response = start_dev()
+                                elif fast_action == "MUTE": response = mute()
+                                elif fast_action == "SCREENSHOT": response = screenshot()
+                                elif fast_action == "TIME": response = get_time()
+                            else:
+                                logger.warning(perm_msg)
+                                response = perm_msg
+                        else:
+                            # Check safety
+                            if not is_safe(user_text):
+                                logger.warning(f"Restricted action blocked: {user_text}")
+                                response = "That action is restricted."
+                            else:
+                                # LLM fallback
+                                trigger_intent_flash("LLM")
+                                response = self.brain.generate_response(user_text)
+                        
+                        # Speak response
+                        if response:
+                            state["status"] = "speaking"
+                            state["assistant_text"] = response
+                            self.speech_engine.speak_async(response)
+                            time.sleep(0.5)  # Give async speak time to start
+                    
+                    # Return to idle after processing
+                    state["active"] = False
+                    state["status"] = "idle"
+                    state["hotkey_active"] = False
+                    state["speaker"] = "unknown"  # Reset speaker
+                    logger.debug("💤 Hotkey daemon: returning to idle")
+                
+                time.sleep(0.1)
+                
+            except Exception as e:
+                logger.error(f"Hotkey daemon error: {e}")
+                state["active"] = False
+                state["status"] = "idle"
+                time.sleep(1)
 
     def _conversation_loop(self):
         """The dedicated thread that runs during an active call."""
@@ -163,27 +323,33 @@ class AetherController:
                 
             consecutive_silences = 0 # Reset silence counter
             logger.info(f"User: {user_text}")
+            state["user_text"] = user_text
             
             # Simple keyword heuristic to exit
             if any(word in user_text.lower() for word in ["bye", "goodbye", "talk to you later"]):
                 logger.info("Ending call due to user goodbye.")
+                state["assistant_text"] = "Goodbye."
                 self.speech_engine.speak_async("Goodbye.")
                 break
 
             # Safety Check (Phase 11)
             if not is_safe(user_text):
                 logger.warning(f"Restricted action blocked: {user_text}")
+                state["assistant_text"] = "That action is restricted."
                 self.speech_engine.speak_async("That action is restricted.")
                 continue
 
             # 🔥 Multi-step Planner Trigger (Phase 11)
             if " and " in user_text.lower() or " then " in user_text.lower():
+                trigger_intent_flash("PLANNING")
                 logger.info("🧠 Planning multi-step execution...")
+                state["assistant_text"] = "Planning steps."
                 self.speech_engine.speak_async("Planning steps.")
                 
                 plan = create_plan(user_text)
                 results = execute_plan(plan)
                 
+                state["assistant_text"] = "Task completed."
                 self.speech_engine.speak_async("Task completed.")
                 continue
 
@@ -194,6 +360,7 @@ class AetherController:
             
             fast_action = match_fast_command(user_text)
             if fast_action:
+                trigger_intent_flash(fast_action)
                 logger.success(f"⚡ FAST PATH ACTIVATED: {fast_action}")
                 response = ""
                 if fast_action == "DEEP_WORK": response = deep_work()
@@ -203,6 +370,7 @@ class AetherController:
                 elif fast_action == "TIME": response = get_time()
                 
                 if response:
+                    state["assistant_text"] = response
                     self.speech_engine.speak_async(response)
                 continue
 
@@ -210,18 +378,28 @@ class AetherController:
             intent = detect_intent(user_text)
             
             if intent != "CHAT":
+                # 3. Decision & Execution Gate (Safety Authorized)
+                is_ok, block_msg = authorize(intent, user_text)
+                if not is_ok:
+                    self.speech_engine.speak_async(block_msg)
+                    continue
+
+                trigger_intent_flash(intent)
                 logger.info(f"⚙️ Executing: {intent}")
                 action_result = route(intent, user_text)
                 
                 if action_result:
+                    state["assistant_text"] = action_result
                     self.speech_engine.speak_async(action_result)
                     continue
             
             # Fallback out of actions -> AI Generation
+            trigger_intent_flash("LLM")
             logger.info("🧠 Conversing")
             reply_text = self.brain.generate_response(user_text)
             
             # Speak the reply
+            state["assistant_text"] = reply_text
             self.speech_engine.speak_async(reply_text)
             
             state["latency"] = f"{(time.time() - start_time):.2f}s"
@@ -232,51 +410,73 @@ class AetherController:
 
 def preflight():
     """Initial hardware and network polling sequence."""
-    required = [".env", "config", "data"]
-    for r in required:
-        if not os.path.exists(r):
-            logger.error(f"Missing required component: {r}. Aborting boot.")
-            print(f"Missing: {r}")
-            return False
+    logger.info("Running Dependency Audit...")
+    missing = []
+    
+    # Check for FFmpeg (Critical for Whisper)
+    if not shutil.which("ffmpeg"):
+        missing.append("FFmpeg (Required for Speech-to-Text)")
+        
+    # Check for Vision Assets
+    if not os.path.exists("assets/accept_button.png"):
+        missing.append("Vision Templates (Required for Call Auto-Answering)")
+        
+    if missing:
+        msg = "⚠️ SETUP WARNINGS:\n" + "\n".join([f"- {m}" for m in missing])
+        logger.warning(msg)
+        state["assistant_text"] = "Limited setup detected. Some features may be disabled."
+    else:
+        logger.success("Environment Validation: ALL SYSTEMS GO")
+        
     return True
 
 if __name__ == "__main__":
-    import socket
-    def is_running():
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # Prevent ghost locks
-        try:
-            s.bind(("127.0.0.1", 65432))
-            return False, s # Keep socket open during process lifetime
-        except Exception:
-            return True, None
-
-    running, lock_sock = is_running()
-    if running:
+    # 1. Establish Environment
+    if not os.path.exists("data"):
+        os.makedirs("data")
+        
+    instance_lock = os.path.join("data", "aether.lock")
+    if os.path.exists(instance_lock):
         logger.error("Aether OS is already actively bound! Aborting duplicate boot.")
         exit(0)
 
-    logger.info("Initiating 10-second pre-boot delay awaiting hardware network attachments...")
-    time.sleep(10)
+    # 2. Fast Boot Readiness Gate
+    def wait_for_ready(timeout=5):
+        t0 = time.time()
+        while time.time() - t0 < timeout:
+            try:
+                socket.create_connection(("127.0.0.1", 11434), timeout=0.5).close()
+                return True
+            except:
+                time.sleep(0.5)
+        return False
 
-    if not preflight():
-        exit(1)
+    logger.info("Waiting for local LLM endpoint...")
+    if not wait_for_ready():
+        logger.warning("LLM endpoint not detected after timeout. Attempting boot anyway...")
         
-    logger.success("Aether Booted via Startup Hook ⚡")
-    
-    # Start tray in background
-    threading.Thread(target=run_tray, daemon=True).start()
-        
-    if os.path.exists("SAFE_MODE"):
-        logger.info("SAFE_MODE File Detected! Overriding system intelligence to Safe State (Autonomy: OFF)")
-        state["autonomy"] = False
-        
-    logger.info("========== AETHER OS ACTIVE (SESSION START) ==========")    
+    # 3. Permanent Recovery Loop
     while True:
         try:
-            logger.info("Spooling up Aether Core Runtime...")
-            aether = AetherController()
-            aether.run()
+            if not preflight():
+                exit(1)
+            
+            logger.info("========== AETHER OS ACTIVE (SESSION START) ==========")
+            
+            # Native Tray & Listeners
+            threading.Thread(target=run_tray, daemon=True).start()
+            try:
+                threading.Thread(target=start_hotkey_listener, daemon=True).start()
+            except:
+                pass
+            
+            controller = AetherController()
+            controller.run()
+            
+        except KeyboardInterrupt:
+            logger.info("User initiated soft shutdown.")
+            break
         except Exception as e:
-            logger.error(f"CRITICAL SYSTEM CRASH: {e}. Initiating daemon auto-restart...")
+            logger.exception(f"CRITICAL SYSTEM FAILURE: {e}")
+            logger.info("Initiating self-healing protocol... restarting in 5s")
             time.sleep(5)

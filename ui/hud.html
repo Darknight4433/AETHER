@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Aether HUD</title>
+<style>
+html, body {
+    margin:0;
+    padding: 0;
+    background: transparent !important;
+    background-color: rgba(0,0,0,0) !important;
+    overflow: hidden;
+    font-family: "Segoe UI", sans-serif;
+    color: #e0f2fe;
+    user-select: none;
+}
+
+/* CENTER ORB */
+#orb {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120px;
+    height: 120px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #00f2ff, #001f2f);
+    box-shadow: 0 0 40px rgba(0, 242, 255, 0.5);
+    transition: transform 0.1s linear;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* ROTATING RINGS */
+.ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,255,255,0.1);
+    transform: translate(-50%, -50%);
+    animation: rotate 8s linear infinite;
+}
+
+.ring2 {
+    width: 240px;
+    height: 240px;
+    animation-duration: 12s;
+    border-color: rgba(168, 85, 247, 0.1);
+}
+
+@keyframes rotate {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* TOP STATS */
+#stats {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 5px 15px;
+    font-size: 11px;
+    display: flex;
+    gap: 10px;
+    white-space: nowrap;
+}
+
+/* SUBTITLES */
+.panel {
+    position: absolute;
+    bottom: 30px;
+    width: 80%;
+    left: 10%;
+    font-size: 14px;
+    line-height: 1.4;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    text-align: center;
+}
+
+#transcript { color: #00f2ff; }
+#response { color: #ffffff; }
+
+.visible { opacity: 0.9; }
+
+#overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.2) 100%);
+    pointer-events: none;
+    z-index: 9999;
+}
+
+/* RESIZE HANDLE */
+#resize {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    width: 12px;
+    height: 12px;
+    border-right: 2px solid rgba(0,255,255,0.3);
+    border-bottom: 2px solid rgba(0,255,255,0.3);
+    cursor: nwse-resize;
+}
+
+#flash {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 240px;
+    height: 240px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+}
+</style>
+</head>
+
+<body>
+
+<div id="resize"></div>
+<div id="overlay"></div>
+
+<div class="ring"></div>
+<div class="ring ring2"></div>
+<div id="flash"></div>
+<canvas id="wave" width="300" height="300"
+        style="position:absolute; top:50%; left:50%;
+               transform:translate(-50%,-50%);
+               pointer-events:none;">
+</canvas>
+<div id="orb"></div>
+
+<div id="stats">
+    <div class="stat-item">CPU <span id="cpu-val" style="color:#00f2ff">--</span>%</div>
+    <div style="border-left:1px solid rgba(255,255,255,0.1); height:12px"></div>
+    <div class="stat-item">RAM <span id="ram-val" style="color:#00f2ff">--</span>%</div>
+    <div style="border-left:1px solid rgba(255,255,255,0.1); height:12px"></div>
+    <div class="stat-item">STATUS <span id="status-val" style="color:#a855f7">IDLE</span></div>
+</div>
+<div id="transcript" class="panel"></div>
+<div id="response" class="panel"></div>
+
+<script>
+let isDragging = false;
+let resizing = false;
+
+document.addEventListener('mousedown', (e) => {
+    if (e.target.id !== 'resize') {
+        isDragging = true;
+        if (window.pywebview && window.pywebview.api) {
+            window.pywebview.api.start_drag();
+        }
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    isDragging = false;
+    resizing = false;
+});
+
+document.getElementById('resize').addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+    resizing = true;
+    if (window.pywebview && window.pywebview.api) {
+        window.pywebview.api.start_resize();
+    }
+});
+
+let waveData = new Array(64).fill(0);
+window.currentSource = "mic";
+
+window.triggerIntent = function(type) {
+    const flash = document.getElementById("flash");
+
+    let color = "#00f2ff";
+
+    if (type === "system") color = "#ff8800";
+    if (type === "web") color = "#0088ff";
+    if (type === "file") color = "#ffff00";
+    if (type === "thinking") color = "#a855f7";
+
+    flash.style.border = `2px solid ${color}`;
+    flash.style.boxShadow = `0 0 30px ${color}`;
+    flash.style.opacity = 1;
+
+    flash.animate([
+        { transform: "translate(-50%, -50%) scale(1)", opacity: 1 },
+        { transform: "translate(-50%, -50%) scale(1.6)", opacity: 0 }
+    ], {
+        duration: 400,
+        easing: "ease-out"
+    });
+
+    setTimeout(() => {
+        flash.style.opacity = 0;
+    }, 400);
+};
+
+window.updateWave = function(arr) {
+    waveData = arr;
+};
+
+function drawWave() {
+    const canvas = document.getElementById("wave");
+    const ctx = canvas.getContext("2d");
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const radius = 90;
+    const points = waveData.length;
+
+    ctx.beginPath();
+
+    for (let i = 0; i < points; i++) {
+        const angle = (i / points) * Math.PI * 2;
+
+        // normalize + clamp
+        const amp = Math.min(waveData[i] / 2000, 1);
+        const r = radius + amp * 30;
+
+        const x = cx + r * Math.cos(angle);
+        const y = cy + r * Math.sin(angle);
+
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+
+    ctx.closePath();
+
+    const color = (window.currentSource === "tts")
+        ? "rgba(255,80,80,0.9)"
+        : "rgba(0,255,200,0.9)";
+    
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    requestAnimationFrame(drawWave);
+}
+
+drawWave();
+
+let typingTimeout = null;
+let sttTimeout = null;
+
+function typeText(element, text, speed = 18) {
+    clearTimeout(typingTimeout);
+    element.innerText = "";
+    element.classList.add("visible");
+
+    let i = 0;
+
+    function type() {
+        if (i < text.length) {
+            element.innerText += text[i];
+            i++;
+            typingTimeout = setTimeout(type, speed);
+        }
+    }
+
+    type();
+}
+
+function showTranscript(text) {
+    const el = document.getElementById("transcript");
+
+    el.innerText = text;
+    el.classList.add("visible");
+
+    clearTimeout(sttTimeout);
+    sttTimeout = setTimeout(() => {
+        el.classList.remove("visible");
+    }, 4000);
+}
+
+window.currentEmotion = "calm";
+
+window.updateEmotion = function(emotion) {
+    if (window.currentEmotion === emotion) return;
+    window.currentEmotion = emotion;
+    
+    if (emotion === "error") {
+        const orb = document.getElementById("orb");
+        orb.animate([
+            { opacity: 1 },
+            { opacity: 0.5 },
+            { opacity: 1 }
+        ], {
+            duration: 200,
+            iterations: 3
+        });
+    }
+};
+
+window.updateHUD = function(status, level, source, cpu, ram, text, reply) {
+    const orb = document.getElementById("orb");
+
+    // Smoother level scaling
+    const levelWeight = status === "idle" ? 3500 : 2500;
+    let scale = 1 + Math.min(level / levelWeight, 0.4);
+    orb.style.transform = `translate(-50%, -50%) scale(${scale})`;
+
+    let colorHex = "#00f2ff";
+    let colorRgba = "rgba(0, 242, 255, 0.2)";
+    let speed = 8;
+    let glowBase = 40;
+
+    if (status === "listening") {
+        colorHex = "#00ff88"; colorRgba = "rgba(0, 255, 136, 0.2)";
+    } else if (status === "thinking") {
+        colorHex = "#a855f7"; colorRgba = "rgba(168, 85, 247, 0.2)";
+        speed = 6;
+    } else if (status === "speaking") {
+        if (window.currentEmotion === "calm") { colorHex = "#00bfff"; colorRgba = "rgba(0, 191, 255, 0.2)"; speed = 10; }
+        if (window.currentEmotion === "success") { colorHex = "#00ff88"; colorRgba = "rgba(0, 255, 136, 0.2)"; speed = 9; }
+        if (window.currentEmotion === "thinking") { colorHex = "#a855f7"; colorRgba = "rgba(168, 85, 247, 0.2)"; speed = 6; }
+        if (window.currentEmotion === "urgent") { colorHex = "#ff8800"; colorRgba = "rgba(255, 136, 0, 0.2)"; speed = 4; }
+        if (window.currentEmotion === "error") { colorHex = "#ff3b3b"; colorRgba = "rgba(255, 59, 59, 0.2)"; speed = 3; }
+    } else {
+        colorHex = "rgba(0, 200, 255, 0.5)"; colorRgba = "rgba(0, 200, 255, 0.05)";
+        speed = 15;
+        glowBase = 15;
+    }
+
+    orb.style.boxShadow = `0 0 ${glowBase + level/40}px ${colorHex}`;
+    orb.style.background = `radial-gradient(circle, ${colorHex}, #001f2f)`;
+
+    document.querySelectorAll(".ring").forEach(r => {
+        r.style.borderColor = colorRgba;
+        r.style.animationDuration = speed + "s";
+    });
+
+    document.getElementById("cpu-val").innerText = cpu;
+    document.getElementById("ram-val").innerText = ram;
+    const statusEl = document.getElementById("status-val");
+    statusEl.innerText = status.toUpperCase();
+    statusEl.style.color = colorHex;
+
+    if (text) showTranscript(text);
+    if (reply) typeText(document.getElementById("response"), reply);
+};
+</script>
+
+</body>
+</html>

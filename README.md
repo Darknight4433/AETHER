@@ -20,3 +20,4 @@ A real-time, event-driven autonomous platform mapping cognitive logic models int
 
 ## Demo
 Please run `python main.py` to trigger the `AetherController`. Aether will instantiate ambient background telemetry traces natively, while concurrently mounting the visual operations dashboard on port 8000. Open `ui/index.html` locally to experience real-time neural tracking logic arrays bridging Voice OS outputs to action handlers.
+

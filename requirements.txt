@@ -26,3 +26,5 @@ pywin32>=306                 # Windows-specific APIs (window detection)
 colorama>=0.4.6              # Colored terminal output
 rich>=13.7.0                 # Rich terminal UI
 loguru>=0.7.2                # Advanced logging
+keyboard>=0.13.5             # Global hotkey listener
+pywebview>=3.8.0              # HTML/CSS/JS overlay for premium animation

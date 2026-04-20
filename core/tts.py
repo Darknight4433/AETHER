@@ -32,43 +32,84 @@ class SpeechEngine:
         """Generates speech via ElevenLabs and plays it locally (blocking)."""
         if not self.client:
             logger.error("Cannot speak: No ElevenLabs client.")
+            state["status"] = "idle"
+            state["audio_level"] = 0.0
+            state["audio_source"] = "mic"
             return
 
         state["status"] = "speaking"
+        state["audio_source"] = "tts"
+        state["audio_level"] = 0.0
+        state["waveform"] = [0]*64
         logger.info(f"Generating voice...")
         try:
             # Generate the audio stream
-            audio_stream = self.client.generate(
+            audio_stream = self.client.text_to_speech.convert(
                 text=text,
-                voice=Voice(
-                    voice_id=self.voice_id,
-                    settings=VoiceSettings(stability=0.71, similarity_boost=0.5, style=0.0, use_speaker_boost=True)
-                ),
-                model="eleven_multilingual_v2" # or eleven_turbo_v2
+                voice_id=self.voice_id,
+                model_id="eleven_multilingual_v2",
+                output_format="pcm_16000_16",
+                voice_settings=VoiceSettings(
+                    stability=0.71, 
+                    similarity_boost=0.5, 
+                    style=0.0, 
+                    use_speaker_boost=True
+                )
             )
             
             # Read generator into bytes
-            audio_bytes = b"".join(list(audio_stream))
+            audio_bytes = b"".join(audio_stream)
             
+            import wave
+            import numpy as np
+
             # We need to save to a temp file because pygame mixer needs a file/buffer
-            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_audio:
-                temp_audio.write(audio_bytes)
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_audio:
                 temp_path = temp_audio.name
+                
+            with wave.open(temp_path, 'wb') as wav_file:
+                wav_file.setnchannels(1)
+                wav_file.setsampwidth(2)
+                wav_file.setframerate(16000)
+                wav_file.writeframes(audio_bytes)
                 
             # Play the audio
             pygame.mixer.music.load(temp_path)
             pygame.mixer.music.play()
             
-            # Wait for playback to finish
+            samples = np.frombuffer(audio_bytes, dtype=np.int16)
+            sample_rate = 16000
+            
+            # Streaming energy feedback loop
+            chunk_size = 1024
             while pygame.mixer.music.get_busy():
                 if self.stop_flag:
                     pygame.mixer.music.stop()
                     logger.info("🔇 Interrupted speaking.")
                     break
-                pygame.time.Clock().tick(10)
+                
+                # Approximate current sample position based on time
+                pos_ms = pygame.mixer.music.get_pos()
+                if pos_ms >= 0:
+                    current_sample_idx = int((pos_ms / 1000.0) * sample_rate)
+                    chunk = samples[current_sample_idx : current_sample_idx + chunk_size]
+                    
+                    if len(chunk) > 0:
+                        # Real-time energy calculation for orb reactivity
+                        energy = np.sqrt(np.mean(chunk.astype(np.float32)**2))
+                        state["audio_level"] = float(energy) / 1000.0 # Normalized
+                        
+                        # Update waveform ring visualization
+                        bins = np.array_split(chunk, 64)
+                        state["waveform"] = [int(np.linalg.norm(b)/(len(b)+0.1)) for b in bins]
+
+                pygame.time.Clock().tick(60) # High-frequency refresh for visuals
                 
             # Reset status to idle after speaking
             state["status"] = "idle"
+            state["audio_level"] = 0.0
+            state["waveform"] = [0]*64
+            state["audio_source"] = "mic"
             
             # Cleanup
             pygame.mixer.music.unload()

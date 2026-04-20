@@ -1,0 +1,22 @@
+{
+  "focus_mode": {
+    "keywords": ["focus mode", "deep work", "study mode", "lock in"],
+    "action": "DEEP_WORK"
+  },
+  "start_coding": {
+    "keywords": ["start coding", "boot dev", "open project", "code time"],
+    "action": "START_DEV"
+  },
+  "mute": {
+    "keywords": ["mute everything", "silence", "volume off", "shut up"],
+    "action": "MUTE"
+  },
+  "screenshot": {
+    "keywords": ["take screenshot", "capture screen"],
+    "action": "SCREENSHOT"
+  },
+  "time": {
+    "keywords": ["what time", "current time", "time is it"],
+    "action": "TIME"
+  }
+}

@@ -1,3 +1,4 @@
+import os
 import sounddevice as sd
 import numpy as np
 import whisper
@@ -6,13 +7,20 @@ import time
 from loguru import logger
 import tempfile
 import soundfile as sf
-import os
 from ui.state import state
+
+_whisper_model = None
+
+def get_model(model_size="base"):
+    global _whisper_model
+    if _whisper_model is None:
+        logger.info(f"Loading Whisper model ({model_size}) into shared memory...")
+        _whisper_model = whisper.load_model(model_size)
+    return _whisper_model
 
 class AudioInterface:
     def __init__(self, model_size="base", device_index=None, silence_threshold=500, silence_duration=1.5):
-        logger.info(f"Loading Whisper model ({model_size})...")
-        self.model = whisper.load_model(model_size)
+        self.model_size = model_size
         self.device_index = device_index
         
         self.samplerate = 16000  # Whisper expects 16k Hz
@@ -30,14 +38,25 @@ class AudioInterface:
         scaled_chunk = audio_chunk * 32768
         return np.sqrt(np.mean(scaled_chunk**2))
 
+    def extract_wave(self, chunk):
+        if len(chunk) == 0:
+            return [0]*64
+        scaled = chunk.flatten() * 32768
+        bins = np.array_split(scaled, 64)
+        return [int(np.linalg.norm(b) / (len(b) + 1)) for b in bins]
+
     def listen_and_transcribe(self, on_speech_start=None):
         """
         Listens to the microphone. 
         Records audio until silence is detected for `silence_duration` seconds.
         Then transcribes the recorded audio.
         """
+        model = get_model(self.model_size)
         q = queue.Queue()
         state["status"] = "listening"
+        state["audio_source"] = "mic"
+        state["audio_level"] = 0.0
+        state["waveform"] = [0]*64
         
         def audio_callback(indata, frames, time, status):
             if status:
@@ -67,6 +86,9 @@ class AudioInterface:
                     continue
                     
                 rms = self.calculate_rms(chunk)
+                state["audio_level"] = float(rms)
+                state["waveform"] = self.extract_wave(chunk)
+                state["audio_source"] = "mic"
                 
                 # If loudness is above threshold, someone is speaking
                 if rms > self.silence_threshold:
@@ -80,6 +102,7 @@ class AudioInterface:
                     audio_data.append(chunk)
                 elif is_speaking:
                     # Silence detected while speaking
+                    state["audio_level"] = float(rms)
                     audio_data.append(chunk)
                     if silence_start_time is None:
                         silence_start_time = time.time()
@@ -91,6 +114,9 @@ class AudioInterface:
         # If they spoke for less than 0.5 seconds, probably just noise
         if not audio_data or (time.time() - started_talking_time < 0.5):
             state["status"] = "idle"
+            state["audio_level"] = 0.0
+            state["waveform"] = [0]*64
+            state["audio_source"] = "mic"
             return ""
 
         # Concatenate chunks
@@ -103,15 +129,24 @@ class AudioInterface:
         
         logger.info("Processing speech to text...")
         try:
-            result = self.model.transcribe(temp_path, fp16=False)
+            result = model.transcribe(temp_path, fp16=False)
             text = result["text"].strip()
             logger.info(f"User Transcribed: {text}")
             state["status"] = "idle"
+            state["audio_source"] = "mic"
             return text
         except Exception as e:
-            logger.error(f"Whisper transcription error: {e}")
+            if "WinError 2" in str(e):
+                logger.error("Whisper transcription error: FFmpeg not found! Please install FFmpeg and add it to your PATH.")
+            else:
+                logger.error(f"Whisper transcription error: {e}")
             state["status"] = "idle"
+            state["audio_level"] = 0.0
+            state["waveform"] = [0]*64
+            state["audio_source"] = "mic"
             return ""
         finally:
+            state["audio_level"] = 0.0
+            state["waveform"] = [0]*64
             if os.path.exists(temp_path):
                 os.remove(temp_path)

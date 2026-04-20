@@ -10,6 +10,8 @@ class VisionSystem:
     def __init__(self, templates_dir="assets"):
         self.sct = mss.mss()
         self.templates_dir = templates_dir
+        # ROI for WhatsApp call buttons (bottom right quadrant typically)
+        self.roi = {"top": 400, "left": 1000, "width": 920, "height": 680} 
         
         # We need a screenshot of the WhatsApp "Accept" button
         self.accept_template_path = os.path.join(templates_dir, "accept_button.png")
@@ -29,14 +31,24 @@ class VisionSystem:
         else:
             self.end_call_template = cv2.imread(self.end_call_template_path, cv2.IMREAD_COLOR)
 
-    def capture_screen(self):
-        """Captures the primary monitor screen."""
-        monitor = self.sct.monitors[1]  # 1 is primary monitor
-        screenshot = self.sct.grab(monitor)
-        # Convert to BGRA to BGR
+    def capture_screen(self, use_roi=True):
+        """Captures the screen or a specific region of interest."""
+        monitor = self.sct.monitors[1]
+        if use_roi:
+            # Shift ROI relative to monitor
+            capture_area = {
+                "top": monitor["top"] + self.roi["top"],
+                "left": monitor["left"] + self.roi["left"],
+                "width": self.roi["width"],
+                "height": self.roi["height"]
+            }
+        else:
+            capture_area = monitor
+
+        screenshot = self.sct.grab(capture_area)
         img = np.array(screenshot)
         img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-        return img, monitor
+        return img, capture_area
 
     def detect_and_click_accept(self, confidence_threshold=0.75):
         """
@@ -69,7 +81,7 @@ class VisionSystem:
             
         return False
 
-    def detect_call_loop(self, check_interval=0.5, confidence=0.75):
+    def detect_call_loop(self, check_interval=0.8, confidence=0.75):
         """Blocking loop that waits for an incoming call."""
         logger.info("Vision system active. Scanning for incoming calls...")
         while True:
