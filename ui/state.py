@@ -16,8 +16,12 @@ state = {
     "audio_level": 0.0,            # Current input or output audio energy
     "audio_source": "mic",         # "mic" or "tts"
     "user_text": "",
-    "assistant_text": ""
+    "assistant_text": "",
+    "active_app": "Desktop",
+    "intent_flash": False,
+    "intent_visual": "thinking"
 }
+
 
 def update_log(entry):
     state["logs"].insert(0, entry)
