@@ -166,6 +166,11 @@ button.primary {
       <span id="status-text">IDLE</span>
   </div>
 
+  <div class="stat-item" style="margin-bottom: 12px; font-size: 10px; color: #64748b;">
+      APP: <span id="active-app" style="color: #94a3b8; font-weight: 700;">Desktop</span>
+  </div>
+
+
   <div class="controls">
     <button class="primary" onclick="window.pywebview.api.start_aether()">START</button>
     <button onclick="window.pywebview.api.stop_aether()">STOP</button>
@@ -175,9 +180,11 @@ button.primary {
 <div class="mini-glob" id="glob"></div>
 
 <script>
-window.updateStats = function(cpu, ram, status) {
+window.updateStats = function(cpu, ram, status, app) {
     document.getElementById("cpu-val").innerText = cpu;
-    document.getElementById("ram-val").innerText = Math.round(ram * 0.16 * 10)/10 + " GB"; // Simulated GB for UI feel
+    document.getElementById("ram-val").innerText = Math.round(ram * 0.16 * 10)/10 + " GB"; 
+    document.getElementById("active-app").innerText = app;
+
     
     const statusText = document.getElementById("status-text");
     const statusDot = document.getElementById("status-dot");

@@ -73,9 +73,11 @@ def _popup_updater():
             cpu = psutil.cpu_percent()
             ram = psutil.virtual_memory().percent
             status = state.get("status", "idle")
+            app = state.get("active_app", "Desktop")
             
-            js = f"if(window.updateStats) window.updateStats({cpu}, {ram}, '{status}');"
+            js = f"if(window.updateStats) window.updateStats({cpu}, {ram}, '{status}', '{app}');"
             _window.evaluate_js(js)
+
             
             time.sleep(0.5)
         except Exception:

@@ -107,6 +107,11 @@ class AetherController:
         # Start autonomy thread
         threading.Thread(target=autonomy_loop, args=(self.speech_engine, self.audio_interface), daemon=True).start()
 
+        # Start app tracker thread
+        from core.app_tracker import start_app_tracker
+        start_app_tracker()
+
+
         # DEMO BYPASS
         def auto_start():
             time.sleep(3)

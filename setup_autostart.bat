@@ -3,6 +3,9 @@ echo ==============================================
 echo   AETHER OS - STARTUP INITIALIZATION (¬‿¬)
 echo ==============================================
 echo.
+echo Checking dependencies...
+python -m pip install -r requirements.txt --quiet
+echo.
 
 :: Try to remove the old Task Scheduler task if it exists to avoid conflicts
 schtasks /delete /tn "AetherOSDaemon" /f >nul 2>&1
