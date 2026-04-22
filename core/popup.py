@@ -11,6 +11,7 @@ from ui.state import state
 
 # Shared popup window instance
 _window = None
+_visible = False  # Track visibility ourselves since pywebview doesn't expose it
 
 class PopupApi:
     def __init__(self, window=None):
@@ -30,9 +31,9 @@ class PopupApi:
         state["status"] = "idle"
         state["active"] = False
 
-def _apply_native_flags(window):
-    """Apply WS_EX_TOOLWINDOW with a retry loop to ensure window handle is found."""
-    for _ in range(10): # Retry for ~1 second
+def _apply_native_flags():
+    """Apply WS_EX_TOOLWINDOW to remove from Alt+Tab."""
+    for attempt in range(20):  # Retry for ~2 seconds
         try:
             hwnd = win32gui.FindWindow(None, 'Aether Panel')
             if hwnd:
@@ -42,26 +43,31 @@ def _apply_native_flags(window):
                     win32con.GWL_EXSTYLE,
                     ex_style | win32con.WS_EX_TOOLWINDOW | win32con.WS_EX_TOPMOST
                 )
-                logger.debug("Native Windows flags applied (Hidden from Alt+Tab)")
-                return
-        except Exception:
-            pass
+                logger.debug(f"Native Windows flags applied on attempt {attempt+1}")
+                return True
+        except Exception as e:
+            logger.debug(f"Native flags attempt {attempt+1} failed: {e}")
         time.sleep(0.1)
-    logger.warning("Failed to apply native window flags: Window handle not found.")
+    logger.warning("Could not apply native window flags after 20 attempts")
+    return False
 
-def _position_window(window):
+def _position_window():
     """Align window to bottom-right corner above system tray."""
+    global _window
     try:
         user32 = ctypes.windll.user32
         sw = user32.GetSystemMetrics(0)
         sh = user32.GetSystemMetrics(1)
-        # Position 320px from right, 250px from bottom
-        window.move(sw - 320, sh - 280)
-    except Exception:
-        pass
+        x = sw - 320
+        y = sh - 280
+        logger.info(f"Positioning popup at ({x}, {y}) on {sw}x{sh} screen")
+        _window.move(x, y)
+    except Exception as e:
+        logger.warning(f"Failed to position popup: {e}")
 
-def _popup_updater(window):
+def _popup_updater():
     """Background thread to update popup stats."""
+    global _window
     while True:
         try:
             cpu = psutil.cpu_percent()
@@ -69,25 +75,38 @@ def _popup_updater(window):
             status = state.get("status", "idle")
             
             js = f"if(window.updateStats) window.updateStats({cpu}, {ram}, '{status}');"
-            window.evaluate_js(js)
+            _window.evaluate_js(js)
             
             time.sleep(0.5)
         except Exception:
-            break
+            time.sleep(1)
 
-def on_focus_lost():
-    """Auto-hide when user clicks away."""
-    global _window
-    if _window:
-        logger.debug("Popup focus lost, auto-hiding.")
+def _on_boot_setup():
+    """Called once when pywebview starts. Initializes flags and positioning."""
+    logger.info("Initializing background popup setup...")
+    _apply_native_flags()
+    _position_window()
+    
+    # 💡 WAKE UP ENGINE: Some backends need a brief show to initialize JS
+    try:
+        _window.show()
+        time.sleep(0.2)
         _window.hide()
+        logger.info("Popup engine initialized (Show/Hide cycle complete)")
+    except Exception as e:
+        logger.warning(f"Initial Show/Hide cycle failed: {e}")
 
-def init_popup():
-    """Initialize the hidden singleton window on start."""
+    threading.Thread(target=_popup_updater, daemon=True).start()
+    logger.info("Popup system ready and waiting in tray.")
+
+def create_popup_window():
+    """Creates the popup window and returns it. Does NOT start the event loop."""
     global _window
     
     base_dir = os.path.dirname(os.path.abspath(__file__))
     ui_path = os.path.normpath(os.path.join(base_dir, '..', 'ui', 'popup.html'))
+    
+    logger.info(f"Creating popup window from: {ui_path}")
 
     _window = webview.create_window(
         'Aether Panel',
@@ -98,35 +117,46 @@ def init_popup():
         easy_drag=True,
         on_top=True,
         transparent=True,
-        hidden=True # Start hidden
+        hidden=True  # START HIDDEN
     )
     
     _window.js_api = PopupApi(_window)
-    
-    def setup():
-        _apply_native_flags(_window)
-        _position_window(_window)
-        threading.Thread(target=_popup_updater, args=(_window,), daemon=True).start()
+    return _window
 
-    _window.events.shown += setup
-    
-    # pywebview doesn't have a direct blur event easily exposed via window.events
-    # we'll use evaluate_js with a callback or window.hide() from the tray toggle.
-    
-    webview.start(gui='edgechromium')
+def start_popup_logic(window):
+    """Starts the threads for a pre-created popup window."""
+    _on_boot_setup()
+
 
 def toggle_popup():
-    """Toggle visibility from tray icon."""
-    global _window
+
+    """Toggle popup visibility. Called from tray icon or hotkey."""
+    global _window, _visible
+    
     if not _window:
-        logger.error("Popup window not initialized!")
+        logger.error("toggle_popup called but _window is None!")
         return
 
-    # Check visible state - pywebview doesn't expose .visible, 
-    # we track it or just show it (on_top handles the rest)
+    logger.info(f"Toggle request: Current Visibility={_visible}")
+    
     try:
-        # Simple toggle - if it fails, it means it's likely hidden or needs focus
-        _window.show()
-        _window.restore() 
-    except Exception:
-        pass
+        if _visible:
+            _window.hide()
+            _visible = False
+            logger.info("Action: HIDDEN")
+        else:
+            # Force to front
+            _window.show()
+            _window.restore()
+            _window.on_top = True
+            _position_window()
+            _visible = True
+            logger.info("Action: SHOWN")
+    except Exception as e:
+        logger.error(f"Critical toggle failure: {e}")
+        # Attempt emergency recovery
+        try:
+            _window.show()
+            _visible = True
+        except: pass
+

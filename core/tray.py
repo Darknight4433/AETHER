@@ -43,24 +43,25 @@ def restart_app(icon, item):
     os.execl(python, python, *sys.argv)
 
 def open_aether(icon, item):
-    logger.info("Toggling Aether Popup Panel...")
+    logger.info(f"Tray Menu Clicked: {item}")
     toggle_popup()
 
 def toggle_dnd(icon, item):
     """Toggle Do Not Disturb mode."""
     state["dnd"] = not state["dnd"]
     dnd_status = "ON" if state["dnd"] else "OFF"
-    logger.info(f"DND Mode: {dnd_status}")
+    logger.info(f"DND Mode Toggled: {dnd_status}")
 
 def run_tray():
     """Run system tray with reactive icon updates based on state."""
-    # Use a specific handler for left-click if supported, otherwise use menu
-    icon = Icon("Aether", create_icon("idle"), "Aether OS", menu=Menu(
-        MenuItem("Open Aether", open_aether, default=True),
+    menu = Menu(
+        MenuItem("Open Aether Panel", open_aether, default=True),
         MenuItem("DND: OFF", toggle_dnd),
         MenuItem("Restart", restart_app),
         MenuItem("Quit", quit_app)
-    ))
+    )
+    
+    icon = Icon("Aether", create_icon("idle"), "Aether OS", menu=menu)
     
     def update_icon():
         """Background thread that updates tray icon based on state changes."""
@@ -71,16 +72,6 @@ def run_tray():
             if current_status != last_status:
                 icon.icon = create_icon(current_status)
                 icon.title = f"Aether - {current_status.upper()}"
-                
-                # Update DND label if it changes (menu is dynamic)
-                dnd_label = "DND: ON [ACTIVE]" if state["dnd"] else "DND: OFF"
-                icon.menu = Menu(
-                    MenuItem("Open Aether", open_aether, default=True),
-                    MenuItem(dnd_label, toggle_dnd),
-                    MenuItem("Restart", restart_app),
-                    MenuItem("Quit", quit_app)
-                )
-                
                 last_status = current_status
                 logger.debug(f"Tray icon updated: {current_status}")
             
@@ -90,5 +81,8 @@ def run_tray():
     updater_thread = threading.Thread(target=update_icon, daemon=True)
     updater_thread.start()
     
-    logger.success("Aether Tray System Online")
-    icon.run()
+    try:
+        logger.success("Aether Tray System Online")
+        icon.run()
+    except Exception as e:
+        logger.error(f"Tray Icon System Crashed: {e}")

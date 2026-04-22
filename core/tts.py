@@ -47,15 +47,16 @@ class SpeechEngine:
             audio_stream = self.client.text_to_speech.convert(
                 text=text,
                 voice_id=self.voice_id,
-                model_id="eleven_multilingual_v2",
-                output_format="pcm_16000_16",
+                model_id="eleven_turbo_v2_5", # Faster and more robust
+                output_format="pcm_16000",
                 voice_settings=VoiceSettings(
-                    stability=0.71, 
-                    similarity_boost=0.5, 
+                    stability=0.5, 
+                    similarity_boost=0.75, 
                     style=0.0, 
                     use_speaker_boost=True
                 )
             )
+
             
             # Read generator into bytes
             audio_bytes = b"".join(audio_stream)
@@ -109,9 +110,10 @@ class SpeechEngine:
             state["status"] = "idle"
             state["audio_level"] = 0.0
             state["waveform"] = [0]*64
-            state["audio_source"] = "mic"
+            # Do NOT force mic here, let the next loop handle it
             
             # Cleanup
+
             pygame.mixer.music.unload()
             try:
                 os.remove(temp_path)

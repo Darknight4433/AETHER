@@ -1,4 +1,4 @@
-from core.tool_router import execute_tool
+from core.router import route as execute_tool
 from loguru import logger
 from ui.state import state, update_log
 

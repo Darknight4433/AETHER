@@ -2,7 +2,7 @@ import time
 from loguru import logger
 from core.sensors import get_time_block, screen_text_sample
 from core.rules import evaluate_rules
-from core.tool_router import execute_tool
+from core.router import route as execute_tool
 from core.confirm import confirm_and_execute
 from core.memory_engine import load_memory
 from ui.state import state, update_log

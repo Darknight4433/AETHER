@@ -119,9 +119,27 @@ class AetherController:
         # System watchdog
         threading.Thread(target=self._system_watchdog, daemon=True).start()
 
-        # Start the popup system on the main thread (blocks here)
-        from core.popup import init_popup
-        init_popup()
+        # 🧠 FINAL SYSTEM BEHAVIOR: Multi-Window Orchestration
+        from core.popup import create_popup_window, start_popup_logic
+        from core.hud import create_hud_window, start_hud_logic
+        import webview
+
+        # 1. Create windows (main thread)
+        popup_win = create_popup_window()
+        hud_win, hud_api = create_hud_window()
+
+        def on_boot():
+            """Initialization function called once the webview engine is ready."""
+            logger.info("Webview engine ready. Initializing window logics...")
+            start_popup_logic(popup_win)
+            if hud_win:
+                start_hud_logic(hud_win, hud_api)
+
+
+        # 2. Start the shared event loop (blocks here)
+        logger.info("Starting unified Aether UI loop...")
+        webview.start(on_boot, gui='edgechromium')
+
 
     def _system_watchdog(self):
         tick = 0
@@ -176,239 +194,142 @@ class AetherController:
                     threading.Thread(target=self._conversation_loop, daemon=True).start()
             time.sleep(0.5)
 
-    def _hotkey_daemon(self):
+    def process_input(self, user_text, speaker="unknown"):
         """
-        On-demand activation daemon with speaker identification.
-        Hotkey → listen → identify speaker → check permissions → execute.
+        Unified processing logic for any user input (voice or hotkey).
+        Fast Path -> Planning -> Intent -> LLM
         """
-        import tempfile
-        from core.voice_id import identify
+        from core.fast_router import match_fast_command
         from core.permissions import check_permission
+        from core.safety_guard import authorize, is_safe
         
+        state["user_text"] = user_text
+        state["status"] = "thinking"
+        
+        # 1. 🔥 Sub-second Fast Path Intercept
+        fast_action = match_fast_command(user_text)
+        if fast_action:
+            allowed, perm_msg = check_permission(fast_action, speaker)
+            if allowed:
+                trigger_intent_flash(fast_action)
+                logger.success(f"⚡ FAST PATH: {fast_action}")
+                response = route(fast_action, user_text)
+                if response:
+                    return response
+            else:
+                logger.warning(perm_msg)
+                return perm_msg
+
+        # 2. 🛑 Safety Check
+        is_ok, block_msg = authorize("GENERAL", user_text)
+        if not is_ok:
+            return block_msg
+
+        # 3. 🧠 Multi-step Planner Trigger
+        if " and " in user_text.lower() or " then " in user_text.lower():
+            trigger_intent_flash("PLANNING")
+            logger.info("🧠 Planning multi-step execution...")
+            # Caller will handle "Planning steps" speech
+            
+            plan = create_plan(user_text)
+            results = execute_plan(plan)
+            return "Tasks completed."
+
+
+        # 4. ⚙️ Intent Detection & Routing
+        intent = detect_intent(user_text)
+        if intent != "CHAT":
+            trigger_intent_flash(intent)
+            logger.info(f"⚙️ Executing: {intent}")
+            action_result = route(intent, user_text)
+            if action_result:
+                return action_result
+        
+        # 5. 🤖 Fallback to LLM
+        trigger_intent_flash("LLM")
+        logger.info("🧠 Conversing")
+        return self.brain.generate_response(user_text)
+
+    def _hotkey_daemon(self):
+        """On-demand activation daemon with speaker identification."""
         while True:
             try:
-                # Stay idle unless triggered by hotkey
-                if not state.get("active"):
-                    time.sleep(0.2)
+                if not state.get("active") or not state.get("force_listen"):
+                    time.sleep(0.1)
                     continue
                 
-                # Hotkey was pressed - activate listening
-                if state.get("force_listen"):
-                    state["force_listen"] = False
-                    state["status"] = "listening"
-                    logger.success("🎤 Listening via hotkey...")
-                    
-                    # Single listen operation
-                    user_text = self.audio_interface.listen_and_transcribe()
-                    
-                    if user_text:
-                        logger.info(f"User (hotkey): {user_text}")
-                        state["user_text"] = user_text
-                        state["status"] = "thinking"
-                        
-                        # 🔐 VOICE IDENTIFICATION STEP
-                        # Try to identify speaker (if profiles exist)
-                        speaker = "unknown"
-                        confidence = 0.0
-                        
-                        try:
-                            # Re-record for identification (better approach: use same recording)
-                            # For now, we identify from the transcription context
-                            # In production, you'd save audio during listen_and_transcribe
-                            from core.voice_id import get_all_speakers
-                            enrolled_speakers = get_all_speakers()
-                            
-                            if enrolled_speakers:
-                                # Note: Ideally audio_interface would return temp path
-                                # For now, we identify based on enrolled profiles
-                                logger.info(f"Enrolled speakers: {enrolled_speakers}")
-                                # Full voice ID integration would happen here
-                                speaker = "unknown"  # TODO: integrate with audio capture
-                            
-                            state["speaker"] = speaker
-                            state["speaker_confidence"] = confidence
-                            logger.info(f"Speaker: {speaker} (confidence: {confidence:.2f})")
-                        except Exception as e:
-                            logger.warning(f"Voice ID check failed: {e}")
-                            speaker = "unknown"
-                            state["speaker"] = speaker
-                        
-                        # Fast path check
-                        from core.fast_router import match_fast_command
-                        from actions.environments import deep_work, start_dev
-                        from actions.system_fast import mute, screenshot, get_time
-                        
-                        fast_action = match_fast_command(user_text)
-                        response = None
-                        
-                        if fast_action:
-                            # 🔐 CHECK PERMISSIONS before executing
-                            allowed, perm_msg = check_permission(fast_action, speaker)
-                            
-                            if allowed:
-                                trigger_intent_flash(fast_action)
-                                logger.success(f"⚡ FAST PATH: {fast_action}")
-                                if fast_action == "DEEP_WORK": response = deep_work()
-                                elif fast_action == "START_DEV": response = start_dev()
-                                elif fast_action == "MUTE": response = mute()
-                                elif fast_action == "SCREENSHOT": response = screenshot()
-                                elif fast_action == "TIME": response = get_time()
-                            else:
-                                logger.warning(perm_msg)
-                                response = perm_msg
-                        else:
-                            # Check safety
-                            if not is_safe(user_text):
-                                logger.warning(f"Restricted action blocked: {user_text}")
-                                response = "That action is restricted."
-                            else:
-                                # LLM fallback
-                                trigger_intent_flash("LLM")
-                                response = self.brain.generate_response(user_text)
-                        
-                        # Speak response
-                        if response:
-                            state["status"] = "speaking"
-                            state["assistant_text"] = response
-                            self.speech_engine.speak_async(response)
-                            time.sleep(0.5)  # Give async speak time to start
-                    
-                    # Return to idle after processing
-                    state["active"] = False
-                    state["status"] = "idle"
-                    state["hotkey_active"] = False
-                    state["speaker"] = "unknown"  # Reset speaker
-                    logger.debug("💤 Hotkey daemon: returning to idle")
+                state["force_listen"] = False
+                state["status"] = "listening"
+                logger.success("🎤 Listening via hotkey...")
                 
-                time.sleep(0.1)
+                user_text = self.audio_interface.listen_and_transcribe()
+                
+                if user_text:
+                    logger.info(f"User (hotkey): {user_text}")
+                    # In a real scenario, speaker ID would happen here
+                    response = self.process_input(user_text, speaker="vaish") 
+                    
+                    if response:
+                        state["status"] = "speaking"
+                        state["assistant_text"] = response
+                        self.speech_engine.speak(response) # Blocking speak here for hotkey flow
+                
+                state["active"] = False
+                state["status"] = "idle"
+                state["hotkey_active"] = False
                 
             except Exception as e:
                 logger.error(f"Hotkey daemon error: {e}")
-                state["active"] = False
                 state["status"] = "idle"
+                state["active"] = False
                 time.sleep(1)
 
     def _conversation_loop(self):
         """The dedicated thread that runs during an active call."""
         self.brain.reset_memory()
-        
-        # Give WhatsApp a moment to connect
         time.sleep(1.5) 
         greeting = "Hello, Aether here. How can I help you?"
-        logger.info(f"Aether: {greeting}")
-        self.speech_engine.speak_async(greeting) # Using async voice!
+        self.speech_engine.speak_async(greeting)
         
         consecutive_silences = 0
-        
         while self.call_active:
-            start_time = time.time()
             state["status"] = "listening"
-            
-            # Check if call is still active (Phase 9 capability)
             if not self.vision.is_call_active():
                 logger.info("📴 Call ended detected visually.")
                 break
             
-            # Listen for user speech (Phase 3 interruptible trigger passed here)
             user_text = self.audio_interface.listen_and_transcribe(
                 on_speech_start=self.speech_engine.stop_speaking
             )
             
             if not user_text:
                 consecutive_silences += 1
-                if consecutive_silences > 6: # 6 * 1.5s = ~10s of silence
-                    logger.warning("Prolonged silence. Hanging up... (breaking loop)")
+                if consecutive_silences > 6:
+                    logger.warning("Prolonged silence. Hanging up...")
                     break
                 continue
                 
-            consecutive_silences = 0 # Reset silence counter
+            consecutive_silences = 0
             logger.info(f"User: {user_text}")
-            state["user_text"] = user_text
             
-            # Simple keyword heuristic to exit
             if any(word in user_text.lower() for word in ["bye", "goodbye", "talk to you later"]):
-                logger.info("Ending call due to user goodbye.")
-                state["assistant_text"] = "Goodbye."
-                self.speech_engine.speak_async("Goodbye.")
+                self.speech_engine.speak("Goodbye.")
                 break
 
-            # Safety Check (Phase 11)
-            if not is_safe(user_text):
-                logger.warning(f"Restricted action blocked: {user_text}")
-                state["assistant_text"] = "That action is restricted."
-                self.speech_engine.speak_async("That action is restricted.")
-                continue
-
-            # 🔥 Multi-step Planner Trigger (Phase 11)
-            if " and " in user_text.lower() or " then " in user_text.lower():
-                trigger_intent_flash("PLANNING")
-                logger.info("🧠 Planning multi-step execution...")
-                state["assistant_text"] = "Planning steps."
-                self.speech_engine.speak_async("Planning steps.")
-                
-                plan = create_plan(user_text)
-                results = execute_plan(plan)
-                
-                state["assistant_text"] = "Task completed."
-                self.speech_engine.speak_async("Task completed.")
-                continue
-
-            # 🔥 Sub-second Fast Path Intercept
-            from core.fast_router import match_fast_command
-            from actions.environments import deep_work, start_dev
-            from actions.system_fast import mute, screenshot, get_time
+            # Centralized Processing
+            response = self.process_input(user_text)
             
-            fast_action = match_fast_command(user_text)
-            if fast_action:
-                trigger_intent_flash(fast_action)
-                logger.success(f"⚡ FAST PATH ACTIVATED: {fast_action}")
-                response = ""
-                if fast_action == "DEEP_WORK": response = deep_work()
-                elif fast_action == "START_DEV": response = start_dev()
-                elif fast_action == "MUTE": response = mute()
-                elif fast_action == "SCREENSHOT": response = screenshot()
-                elif fast_action == "TIME": response = get_time()
-                
-                if response:
-                    state["assistant_text"] = response
-                    self.speech_engine.speak_async(response)
-                continue
-
-            # Intent Detection & Routing (Phase 10 / Single-step)
-            intent = detect_intent(user_text)
+            if response:
+                state["assistant_text"] = response
+                self.speech_engine.speak_async(response)
             
-            if intent != "CHAT":
-                # 3. Decision & Execution Gate (Safety Authorized)
-                is_ok, block_msg = authorize(intent, user_text)
-                if not is_ok:
-                    self.speech_engine.speak_async(block_msg)
-                    continue
-
-                trigger_intent_flash(intent)
-                logger.info(f"⚙️ Executing: {intent}")
-                action_result = route(intent, user_text)
-                
-                if action_result:
-                    state["assistant_text"] = action_result
-                    self.speech_engine.speak_async(action_result)
-                    continue
-            
-            # Fallback out of actions -> AI Generation
-            trigger_intent_flash("LLM")
-            logger.info("🧠 Conversing")
-            reply_text = self.brain.generate_response(user_text)
-            
-            # Speak the reply
-            state["assistant_text"] = reply_text
-            self.speech_engine.speak_async(reply_text)
-            
-            state["latency"] = f"{(time.time() - start_time):.2f}s"
             state["status"] = "idle"
             
         logger.info("Call ended or conversation loop exited. Resetting state.")
         self.call_active = False
 
 def preflight():
+
     """Initial hardware and network polling sequence."""
     logger.info("Running Dependency Audit...")
     missing = []

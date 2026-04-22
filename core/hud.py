@@ -139,12 +139,23 @@ def _hud_updater(window, api):
             if api:
                 api.last_heartbeat = time.time()
                 
+            # 🧠 FINAL SYSTEM BEHAVIOR: Automatic Visibility Logic
+            if current_status == "idle":
+                if getattr(api, '_visible', True):
+                    window.hide()
+                    api._visible = False
+            else:
+                if not getattr(api, '_visible', False):
+                    window.show()
+                    api._visible = True
+
             # Click-through management
-            if api:
-                if current_status == "idle":
-                    api.set_clickthrough(True)
+            if api and current_status != "idle":
+                if current_status == "speaking":
+                    api.set_clickthrough(True) # Can click through while it speaks
                 else:
                     api.set_clickthrough(False)
+
 
         except Exception as e:
             logger.exception(f"HUD Updater Error: {e}")
@@ -154,24 +165,15 @@ def _hud_updater(window, api):
         time.sleep(0.1)
 
 
-def start_hud():
+def create_hud_window():
+    """Creates the HUD window and returns it. Does NOT start the event loop."""
     hud_path = _get_hud_path()
     if not os.path.exists(hud_path):
         logger.error(f"HUD HTML not found: {hud_path}")
-        return
+        return None, None
+
 
     api = HUDApi()
-
-    def monitor_hud():
-        """Watchdog that detects if the HUD window has frozen or closed."""
-        while True:
-            if hasattr(api, 'last_heartbeat'):
-                if time.time() - api.last_heartbeat > 10:
-                    logger.warning("HUD Window Heartbeat Lost! UI may be frozen or closed. Attempting restart...")
-            time.sleep(5)
-            
-    threading.Thread(target=monitor_hud, daemon=True).start()
-
     window = webview.create_window(
         'Aether HUD',
         hud_path,
@@ -179,22 +181,27 @@ def start_hud():
         frameless=True,
         transparent=True,
         on_top=True,
-        width=500,     # Increased width for text rendering
-        height=350,    # Increased height
-        x=1400,        # Adjusted X to account for new width
+        width=500,
+        height=350,
+        x=1400,
         y=40,
-        resizable=False
+        resizable=False,
+        hidden=True # Start hidden!
     )
 
     api.window = window
-    api.last_heartbeat = time.time()
+    return window, api
 
-    def on_loaded():
-        logger.success('Aether HUD overlay loaded')
-        threading.Thread(target=_hud_updater, args=(window, api), daemon=True).start()
+def start_hud_logic(window, api):
+    """Starts the threads for a pre-created HUD window."""
+    threading.Thread(target=_hud_updater, args=(window, api), daemon=True).start()
+    
+    def monitor_hud():
+        while True:
+            if hasattr(api, 'last_heartbeat'):
+                if time.time() - api.last_heartbeat > 10:
+                    logger.warning("HUD Window Heartbeat Lost!")
+            time.sleep(5)
+    threading.Thread(target=monitor_hud, daemon=True).start()
+    logger.success("HUD background logic initialized.")
 
-    try:
-        logger.success('Starting Aether HUD overlay on main thread')
-        webview.start(on_loaded, gui='edgechromium', debug=False)
-    except Exception as e:
-        logger.error(f"HUD overlay failed to start: {e}")

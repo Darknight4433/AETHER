@@ -62,6 +62,10 @@ def start_hotkey_listener():
         keyboard.add_hotkey("ctrl+alt+t", on_hotkey_time)
         logger.debug("+ Hotkey registered: Ctrl+Alt+T (Time)")
         
+        from core.popup import toggle_popup
+        keyboard.add_hotkey("ctrl+alt+p", toggle_popup)
+        logger.debug("+ Hotkey registered: Ctrl+Alt+P (Toggle Panel)")
+        
         logger.success("Hotkey Listener Running (Press Ctrl+Alt+A to wake Aether)")
         
         # This blocks indefinitely, listening for hotkeys
