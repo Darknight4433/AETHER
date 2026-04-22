@@ -174,11 +174,16 @@ button.primary {
   </div>
 
 
+  <div id="suggestion-bar" style="display:none; margin-bottom:8px; padding:6px 10px; background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.25); border-radius:6px; font-size:9px; color:#fbbf24; cursor:pointer; transition: all 0.3s ease;" onclick="window.pywebview.api.accept_suggestion()">
+      <span style="opacity:0.6;">💡</span> <span id="suggestion-text"></span>
+  </div>
+
   <div class="controls">
     <button class="primary" onclick="window.pywebview.api.start_aether()">START</button>
     <button onclick="window.pywebview.api.stop_aether()">STOP</button>
   </div>
 </div>
+
 
 <div class="mini-glob" id="glob"></div>
 
@@ -234,7 +239,23 @@ const setupDrag = (id) => {
 
 setupDrag('drag');
 setupDrag('glob');
+
+// Learning Engine: Suggestion Bar
+window.showSuggestion = function(text) {
+    const bar = document.getElementById('suggestion-bar');
+    const txt = document.getElementById('suggestion-text');
+    if (bar && txt) {
+        txt.innerText = text;
+        bar.style.display = 'block';
+    }
+};
+
+window.hideSuggestion = function() {
+    const bar = document.getElementById('suggestion-bar');
+    if (bar) bar.style.display = 'none';
+};
 </script>
+
 
 </body>
 </html>

@@ -12,14 +12,20 @@ def route(intent, text=None, args=None):
     Unified routing system for Aether.
     Handles both direct intents (from voice) and planned actions (from LLM planner).
     """
+    from ui.state import state
+    from core.usage_logger import log_action
+
     args = args or {}
     
     # Normalize inputs
     if not text and args:
-        # If we only have args (from planner), synthesize a text if needed
         text = args.get("query") or args.get("name") or args.get("app") or ""
 
     logger.info(f"Routing intent: {intent}")
+
+    # Log every routed action for the learning engine
+    active_app = state.get("active_app", "unknown")
+    log_action(intent.lower(), app=active_app, metadata={"text": text[:100] if text else ""})
 
     if intent == "OPEN_APP":
         app_name = text or args.get("app")
@@ -61,4 +67,5 @@ def route(intent, text=None, args=None):
         return mute()
 
     return None
+
 

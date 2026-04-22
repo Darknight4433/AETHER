@@ -213,6 +213,13 @@ def on_app_changed(app_name, window_title=""):
     """Called by the Process Anchor when the active app changes."""
     global _current_profile
 
+    # Log every app switch for the learning engine
+    try:
+        from core.usage_logger import log_action
+        log_action("app_switch", app=app_name, metadata={"title": window_title[:80] if window_title else ""})
+    except Exception:
+        pass
+
     if not is_safe_app(app_name):
         _current_profile = DEFAULT_PROFILE
         state["context_mode"] = "general"
@@ -229,6 +236,7 @@ def on_app_changed(app_name, window_title=""):
 
     logger.info(f"Context Engine: {label} ({mode} mode)")
     update_log(f"Context: {label}")
+
 
 
 def get_context_prompt_addon():

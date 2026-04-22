@@ -31,6 +31,21 @@ class PopupApi:
         state["status"] = "idle"
         state["active"] = False
 
+    def accept_suggestion(self):
+        """User clicked the suggestion bar — execute the learned action."""
+        action = state.get("suggestion_action", "")
+        if action:
+            logger.info(f"User accepted suggestion: {action}")
+            try:
+                from core.router import route
+                route(action.upper())
+            except Exception as e:
+                logger.error(f"Suggestion execution failed: {e}")
+            state["suggestion"] = ""
+            state["suggestion_action"] = ""
+            state["suggestion_confidence"] = 0
+
+
 def _apply_native_flags():
     """Apply WS_EX_TOOLWINDOW to remove from Alt+Tab."""
     for attempt in range(20):  # Retry for ~2 seconds
@@ -78,6 +93,14 @@ def _popup_updater():
             
             js = f"if(window.updateStats) window.updateStats({cpu}, {ram}, '{status}', '{app}', '{context_mode}');"
             _window.evaluate_js(js)
+
+            # Push suggestion to UI
+            suggestion = state.get("suggestion", "").replace("'", "\\'")
+            if suggestion:
+                _window.evaluate_js(f"if(window.showSuggestion) window.showSuggestion('{suggestion}');")
+            else:
+                _window.evaluate_js("if(window.hideSuggestion) window.hideSuggestion();")
+
 
 
             

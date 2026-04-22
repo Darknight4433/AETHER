@@ -22,8 +22,12 @@ state = {
     "context_mode": "general",
     "context_label": "Desktop",
     "intent_flash": False,
-    "intent_visual": "thinking"
+    "intent_visual": "thinking",
+    "suggestion": "",
+    "suggestion_action": "",
+    "suggestion_confidence": 0
 }
+
 
 
 
