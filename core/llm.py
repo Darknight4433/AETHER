@@ -32,8 +32,15 @@ class Brain:
         try:
             recent_memory = memory.get_context()
             
-            # Phase 9: Smart Context Handling
-            full_prompt = f"""You are a real-time voice assistant.
+            # Context-aware prompt injection
+            context_addon = ""
+            try:
+                from core.context_engine import get_context_prompt_addon
+                context_addon = get_context_prompt_addon()
+            except Exception:
+                pass
+
+            full_prompt = f"""You are a real-time voice assistant.{context_addon}
 
 Keep responses:
 - Extremely Short (1-2 sentences)
@@ -44,6 +51,7 @@ Recent memory:
 {recent_memory}
 
 User said: {user_text}"""
+
 
             # Build stateless messages payload
             messages = [

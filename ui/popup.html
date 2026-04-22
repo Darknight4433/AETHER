@@ -166,8 +166,11 @@ button.primary {
       <span id="status-text">IDLE</span>
   </div>
 
-  <div class="stat-item" style="margin-bottom: 12px; font-size: 10px; color: #64748b;">
-      APP: <span id="active-app" style="color: #94a3b8; font-weight: 700;">Desktop</span>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+      <div class="stat-item" style="font-size: 10px; color: #64748b;">
+          APP: <span id="active-app" style="color: #94a3b8; font-weight: 700;">Desktop</span>
+      </div>
+      <div id="context-badge" style="font-size: 9px; font-weight: 800; letter-spacing: 1px; padding: 2px 8px; border-radius: 4px; background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3);">GENERAL</div>
   </div>
 
 
@@ -180,10 +183,27 @@ button.primary {
 <div class="mini-glob" id="glob"></div>
 
 <script>
-window.updateStats = function(cpu, ram, status, app) {
+window.updateStats = function(cpu, ram, status, app, contextMode) {
     document.getElementById("cpu-val").innerText = cpu;
     document.getElementById("ram-val").innerText = Math.round(ram * 0.16 * 10)/10 + " GB"; 
     document.getElementById("active-app").innerText = app;
+
+    // Context badge styling
+    const badge = document.getElementById("context-badge");
+    const modeColors = {
+        browser:  { bg: "rgba(56,189,248,0.15)",  fg: "#38bdf8", border: "rgba(56,189,248,0.3)" },
+        dev:      { bg: "rgba(168,85,247,0.15)",   fg: "#a855f7", border: "rgba(168,85,247,0.3)" },
+        media:    { bg: "rgba(34,197,94,0.15)",    fg: "#22c55e", border: "rgba(34,197,94,0.3)" },
+        comms:    { bg: "rgba(251,191,36,0.15)",   fg: "#fbbf24", border: "rgba(251,191,36,0.3)" },
+        office:   { bg: "rgba(239,68,68,0.15)",    fg: "#ef4444", border: "rgba(239,68,68,0.3)" },
+        system:   { bg: "rgba(148,163,184,0.15)",  fg: "#94a3b8", border: "rgba(148,163,184,0.3)" },
+        general:  { bg: "rgba(100,116,139,0.1)",   fg: "#64748b", border: "rgba(100,116,139,0.2)" }
+    };
+    const mc = modeColors[contextMode] || modeColors.general;
+    badge.innerText = (contextMode || "general").toUpperCase();
+    badge.style.background = mc.bg;
+    badge.style.color = mc.fg;
+    badge.style.borderColor = mc.border;
 
     
     const statusText = document.getElementById("status-text");

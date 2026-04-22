@@ -18,9 +18,13 @@ state = {
     "user_text": "",
     "assistant_text": "",
     "active_app": "Desktop",
+    "active_window_title": "",
+    "context_mode": "general",
+    "context_label": "Desktop",
     "intent_flash": False,
     "intent_visual": "thinking"
 }
+
 
 
 def update_log(entry):
