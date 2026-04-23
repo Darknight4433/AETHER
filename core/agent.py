@@ -1,10 +1,12 @@
-from core.router import route as execute_tool
 from loguru import logger
+
+from core.router import route as execute_tool
 from ui.state import state, update_log
+
 
 def execute_plan(plan):
     results = []
-    
+
     steps = plan.get("steps", [])
     if steps:
         update_log(f"Executor received {len(steps)} planned steps.")
@@ -13,15 +15,15 @@ def execute_plan(plan):
         action = step.get("action")
         args = step.get("args", {})
 
-        logger.info(f"⚙️ {action} → {args}")
+        logger.info(f"Executing planned step: {action} -> {args}")
         state["last_action"] = f"{action} {args}"
         state["thought"] = f"Executing: {action}"
         update_log(f"Executing step action: {action}")
         state["error"] = ""
 
         try:
-            result = execute_tool(action, args)
-            logger.success(f"✅ {result}")
+            result = execute_tool(action, args=args)
+            logger.success(f"Execution result: {result}")
             update_log(f"Execution complete: {result}")
             results.append(result)
         except Exception as e:

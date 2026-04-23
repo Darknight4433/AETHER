@@ -6,16 +6,17 @@ This provides a premium animated HUD experience replacing the simplistic orb.
 import os
 import threading
 import time
+import json
 import psutil
 
 import webview
 from loguru import logger
+from core.paths import resource_path
 from ui.state import state
 
 
 def _get_hud_path():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    return os.path.normpath(os.path.join(base_dir, '..', 'ui', 'hud.html'))
+    return resource_path("ui", "hud.html")
 
 
 def get_system_stats():
@@ -114,25 +115,31 @@ def _hud_updater(window, api):
                 emotion = state.get("emotion", "calm")
                 try:
                     if window is not None:
-                        window.evaluate_js(f"if(!window.currentEmotion) window.currentEmotion='calm'; window.updateEmotion('{emotion}');")
+                        window.evaluate_js(
+                            "if(!window.currentEmotion) window.currentEmotion='calm'; "
+                            f"window.updateEmotion({json.dumps(emotion)});"
+                        )
                 except Exception:
                     pass
-                
-            # Escape strings safely
-            user_text_safe = send_text.replace('`', "'").replace('\\', '\\\\')
-            assistant_text_safe = send_reply.replace('`', "'").replace('\\', '\\\\')
 
             if window is not None:
                 wave = state.get('waveform', [0]*64)
                 # Update HUD stats and transcript
-                js = f"window.updateHUD('{current_status}', {audio_level:.2f}, '{audio_source}', {cpu}, {ram}, `{user_text_safe}`, `{assistant_text_safe}`)"
+                js = (
+                    "window.updateHUD("
+                    f"{json.dumps(current_status)}, {audio_level:.2f}, "
+                    f"{json.dumps(audio_source)}, {cpu}, {ram}, "
+                    f"{json.dumps(send_text)}, {json.dumps(send_reply)})"
+                )
                 window.evaluate_js(js)
-                window.evaluate_js(f"window.updateWave({wave})")
-                window.evaluate_js(f"window.currentSource='{audio_source}'")
+                window.evaluate_js(f"window.updateWave({json.dumps(wave)})")
+                window.evaluate_js(f"window.currentSource={json.dumps(audio_source)}")
 
                 if state.get("intent_flash"):
                     visual = state.get("intent_visual", "thinking")
-                    window.evaluate_js(f"if(window.triggerIntent) window.triggerIntent('{visual}');")
+                    window.evaluate_js(
+                        f"if(window.triggerIntent) window.triggerIntent({json.dumps(visual)});"
+                    )
                     state["intent_flash"] = False
                     
             # Heartbeat update
@@ -204,4 +211,3 @@ def start_hud_logic(window, api):
             time.sleep(5)
     threading.Thread(target=monitor_hud, daemon=True).start()
     logger.success("HUD background logic initialized.")
-

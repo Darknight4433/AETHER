@@ -10,6 +10,7 @@ class VisionSystem:
     def __init__(self, templates_dir="assets"):
         self.sct = mss.mss()
         self.templates_dir = templates_dir
+        os.makedirs(self.templates_dir, exist_ok=True)
         # ROI for WhatsApp call buttons (bottom right quadrant typically)
         self.roi = {"top": 400, "left": 1000, "width": 920, "height": 680} 
         

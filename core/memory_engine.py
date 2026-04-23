@@ -2,12 +2,11 @@ import json
 import os
 import time
 from loguru import logger
+from core.paths import data_path
 
-FILE = "data/memory_state.json"
+FILE = data_path("memory_state.json")
 
 def load_memory():
-    if not os.path.exists("data"):
-        os.makedirs("data", exist_ok=True)
     try:
         if os.path.exists(FILE):
             with open(FILE, "r") as f:
@@ -18,8 +17,6 @@ def load_memory():
     return {"actions": [], "habits": {}, "preferences": {}}
 
 def save_memory(data):
-    if not os.path.exists("data"):
-        os.makedirs("data", exist_ok=True)
     with open(FILE, "w") as f:
         json.dump(data, f, indent=2)
 

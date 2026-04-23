@@ -6,6 +6,7 @@ Uses resemblyzer for efficient on-device speaker embeddings.
 import os
 import numpy as np
 from loguru import logger
+from core.paths import data_path
 
 # Lazy initialization - only load when needed
 encoder = None
@@ -26,7 +27,7 @@ def _get_encoder():
     encoder = None
 
 # Configuration
-PROFILE_DIR = "data/voice_profiles"
+PROFILE_DIR = data_path("voice_profiles")
 THRESHOLD = 0.75  # Adjust 0.70-0.85 based on testing
 
 os.makedirs(PROFILE_DIR, exist_ok=True)

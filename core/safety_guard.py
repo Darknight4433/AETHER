@@ -14,7 +14,10 @@ def ensure_base():
 def is_path_safe(path):
     """Ensure path is within the allowed workspace."""
     abs_path = os.path.abspath(path)
-    return abs_path.startswith(BASE_DIR)
+    try:
+        return os.path.commonpath([abs_path, BASE_DIR]) == BASE_DIR
+    except ValueError:
+        return False
 
 def is_action_allowed(action):
     """Check if the specific tool action is authorized."""

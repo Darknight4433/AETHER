@@ -1,12 +1,14 @@
 import pyautogui
-import os
+
+from core.paths import data_path
+
 
 def screenshot():
-    os.makedirs("data", exist_ok=True)
-    path = "data/screen_capture.png"
+    path = data_path("screen_capture.png")
     pyautogui.screenshot(path)
-    return "📸 Screenshot saved"
+    return "Screenshot saved"
+
 
 def volume_up():
     pyautogui.press("volumeup")
-    return "🔊 Volume increased"
+    return "Volume increased"

@@ -1,13 +1,11 @@
 import json
 import os
 from loguru import logger
+from core.paths import data_path
 
-FILE = "data/memory.json"
+FILE = data_path("memory.json")
 
 def save(user, reply):
-    if not os.path.exists("data"):
-        os.makedirs("data", exist_ok=True)
-        
     try:
         with open(FILE, "r") as f:
             data = json.load(f)

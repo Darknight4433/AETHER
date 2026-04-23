@@ -12,8 +12,6 @@ Pillow
 psutil
 keyboard
 pywin32
-uvicorn
-fastapi
-python-multipart
 requests
 ollama
+

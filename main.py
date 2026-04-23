@@ -2,14 +2,31 @@ import os
 import sys
 import shutil
 
-# Ensure the working directory is explicitly set to the directory containing main.py
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-os.chdir(BASE_DIR)
-
 import time
 import threading
 from dotenv import load_dotenv
 from loguru import logger
+from core.paths import data_path, get_install_root
+
+# Ensure a stable working directory in both source and bundled builds.
+os.chdir(get_install_root())
+
+def _safe_console_sink(message):
+    try:
+        sys.stderr.buffer.write(str(message).encode("utf-8", errors="backslashreplace"))
+    except Exception:
+        pass
+
+
+def _notify_user(title, message):
+    if sys.platform == "win32":
+        try:
+            ctypes = __import__("ctypes")
+            ctypes.windll.user32.MessageBoxW(0, message, title, 0x40)
+            return
+        except Exception:
+            pass
+    logger.error(f"{title}: {message}")
 
 # Establish permanent trace log
 if sys.platform == "win32":
@@ -21,7 +38,9 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-logger.add("aether.log", rotation="10 MB", level="INFO", encoding="utf-8")
+logger.remove()
+logger.add(_safe_console_sink, level="INFO")
+logger.add(data_path("aether.log"), rotation="10 MB", level="INFO", encoding="utf-8")
 
 # Import Core Systems
 from core.vision import VisionSystem
@@ -35,7 +54,6 @@ from core.agent import execute_plan
 from core.safety_guard import authorize, is_safe
 from core.autonomy import autonomy_loop
 from core.hotkey import start_hotkey_listener
-from core.hud import start_hud
 from core.intent_visuals import trigger_intent_flash
 from ui.state import state, update_log
 from core.tray import run_tray
@@ -55,13 +73,16 @@ if AUDIO_INPUT_DEVICE is not None:
 AETHER_SYSTEM_PROMPT = os.getenv("AETHER_SYSTEM_PROMPT", "You are Aether, a helpful assistant on a voice call. Keep responses very short.")
 SILENCE_THRESHOLD = int(os.getenv("SILENCE_THRESHOLD", "500"))
 SILENCE_DURATION = float(os.getenv("SILENCE_DURATION", "1.5"))
+DEMO_AUTO_START = os.getenv("AETHER_DEMO_AUTO_START", "").strip().lower() in {"1", "true", "yes", "on"}
+ENABLE_HUD = os.getenv("AETHER_ENABLE_HUD", "").strip().lower() in {"1", "true", "yes", "on"}
+FIRST_RUN_FILE = data_path("first_run.flag")
 
 class AetherController:
     def __init__(self):
         logger.info("Initializing Aether Core...")
         
         # 1. Initialize Vision (Call Detection)
-        self.vision = VisionSystem(templates_dir="assets")
+        self.vision = VisionSystem(templates_dir=data_path("assets"))
         
         # 2. Initialize STT (Whisper)
         self.audio_interface = AudioInterface(
@@ -89,14 +110,9 @@ class AetherController:
         logger.success("Aether Systems Online.")
 
     def run(self):
-        import uvicorn
-        def start_dashboard():
-            uvicorn.run("ui.server:app", host="127.0.0.1", port=8000, log_level="error")
-        threading.Thread(target=start_dashboard, daemon=True).start()
-        
         print("Aether OS v1.0 - Online")
-        logger.info("Aether OS v1.0 Dashboard running on http://127.0.0.1:8000/")
         update_log("Aether Core Online")
+
         
         # Start detector thread
         threading.Thread(target=self._detector_loop, daemon=True).start()
@@ -112,26 +128,29 @@ class AetherController:
         start_app_tracker()
 
 
-        # DEMO BYPASS
-        def auto_start():
-            time.sleep(3)
-            if not self.call_active:
-                logger.warning("DEMO MODE: Starting Aether (Silent)...")
-                self.call_active = True
-                threading.Thread(target=self._conversation_loop, daemon=True).start()
-        threading.Thread(target=auto_start, daemon=True).start()
+        if DEMO_AUTO_START:
+            def auto_start():
+                time.sleep(3)
+                if not self.call_active:
+                    logger.warning("DEMO MODE: Starting Aether (Silent)...")
+                    self.call_active = True
+                    threading.Thread(target=self._conversation_loop, daemon=True).start()
+            threading.Thread(target=auto_start, daemon=True).start()
 
         # System watchdog
         threading.Thread(target=self._system_watchdog, daemon=True).start()
 
-        # 🧠 FINAL SYSTEM BEHAVIOR: Multi-Window Orchestration
-        from core.popup import create_popup_window, start_popup_logic
-        from core.hud import create_hud_window, start_hud_logic
+        # Popup-first UI orchestration
+        from core.popup import create_popup_window, show_popup, start_popup_logic
         import webview
 
         # 1. Create windows (main thread)
         popup_win = create_popup_window()
-        hud_win, hud_api = create_hud_window()
+        hud_win = None
+        hud_api = None
+        if ENABLE_HUD:
+            from core.hud import create_hud_window, start_hud_logic
+            hud_win, hud_api = create_hud_window()
 
         def on_boot():
             """Initialization function called once the webview engine is ready."""
@@ -139,10 +158,17 @@ class AetherController:
             start_popup_logic(popup_win)
             if hud_win:
                 start_hud_logic(hud_win, hud_api)
+            if not os.path.exists(FIRST_RUN_FILE):
+                state["assistant_text"] = "Aether is running. Click the tray icon to begin."
+                show_popup()
+                if self.speech_engine.client:
+                    self.speech_engine.speak_async("Aether is now running. Click the tray icon to begin.")
+                with open(FIRST_RUN_FILE, "w", encoding="utf-8") as first_run:
+                    first_run.write("done")
 
 
         # 2. Start the shared event loop (blocks here)
-        logger.info("Starting unified Aether UI loop...")
+        logger.info(f"Starting Aether UI loop in {'popup+hud' if ENABLE_HUD else 'minimal'} mode...")
         webview.start(on_boot, gui='edgechromium')
 
 
@@ -211,13 +237,13 @@ class AetherController:
         state["user_text"] = user_text
         state["status"] = "thinking"
         
-        # 1. 🔥 Sub-second Fast Path Intercept
+        # 1. Fast path intercept
         fast_action = match_fast_command(user_text)
         if fast_action:
             allowed, perm_msg = check_permission(fast_action, speaker)
             if allowed:
                 trigger_intent_flash(fast_action)
-                logger.success(f"⚡ FAST PATH: {fast_action}")
+                logger.success(f"FAST PATH: {fast_action}")
                 response = route(fast_action, user_text)
                 if response:
                     return response
@@ -225,15 +251,15 @@ class AetherController:
                 logger.warning(perm_msg)
                 return perm_msg
 
-        # 2. 🛑 Safety Check
+        # 2. Safety check
         is_ok, block_msg = authorize("GENERAL", user_text)
         if not is_ok:
             return block_msg
 
-        # 3. 🧠 Multi-step Planner Trigger
+        # 3. Multi-step planner trigger
         if " and " in user_text.lower() or " then " in user_text.lower():
             trigger_intent_flash("PLANNING")
-            logger.info("🧠 Planning multi-step execution...")
+            logger.info("Planning multi-step execution...")
             # Caller will handle "Planning steps" speech
             
             plan = create_plan(user_text)
@@ -241,18 +267,18 @@ class AetherController:
             return "Tasks completed."
 
 
-        # 4. ⚙️ Intent Detection & Routing
+        # 4. Intent detection and routing
         intent = detect_intent(user_text)
         if intent != "CHAT":
             trigger_intent_flash(intent)
-            logger.info(f"⚙️ Executing: {intent}")
+            logger.info(f"Executing: {intent}")
             action_result = route(intent, user_text)
             if action_result:
                 return action_result
         
-        # 5. 🤖 Fallback to LLM
+        # 5. Fallback to LLM
         trigger_intent_flash("LLM")
-        logger.info("🧠 Conversing")
+        logger.info("Conversing")
         return self.brain.generate_response(user_text)
 
     def _hotkey_daemon(self):
@@ -265,7 +291,7 @@ class AetherController:
                 
                 state["force_listen"] = False
                 state["status"] = "listening"
-                logger.success("🎤 Listening via hotkey...")
+                logger.success("Listening via hotkey...")
                 
                 user_text = self.audio_interface.listen_and_transcribe()
                 
@@ -300,7 +326,7 @@ class AetherController:
         while self.call_active:
             state["status"] = "listening"
             if not self.vision.is_call_active():
-                logger.info("📴 Call ended detected visually.")
+                logger.info("Call ended detected visually.")
                 break
             
             user_text = self.audio_interface.listen_and_transcribe(
@@ -338,17 +364,31 @@ def preflight():
     """Initial hardware and network polling sequence."""
     logger.info("Running Dependency Audit...")
     missing = []
+    warnings = []
     
-    # Check for FFmpeg (Critical for Whisper)
-    if not shutil.which("ffmpeg"):
-        missing.append("FFmpeg (Required for Speech-to-Text)")
-        
     # Check for Vision Assets
-    if not os.path.exists("assets/accept_button.png"):
+    assets_dir = data_path("assets")
+    if not os.path.exists(os.path.join(assets_dir, "accept_button.png")):
         missing.append("Vision Templates (Required for Call Auto-Answering)")
+
+    try:
+        import sounddevice as sd
+
+        devices = sd.query_devices()
+        if not any(device.get("max_input_channels", 0) > 0 for device in devices):
+            warnings.append("No microphone input device detected")
+    except Exception as e:
+        warnings.append(f"Microphone check failed: {e}")
+
+    try:
+        with open(data_path("healthcheck.tmp"), "w", encoding="utf-8") as health_file:
+            health_file.write("ok")
+    except Exception as e:
+        warnings.append(f"Data directory is not writable: {e}")
         
-    if missing:
-        msg = "⚠️ SETUP WARNINGS:\n" + "\n".join([f"- {m}" for m in missing])
+    if missing or warnings:
+        items = [*missing, *warnings]
+        msg = "SETUP WARNINGS:\n" + "\n".join([f"- {m}" for m in items])
         logger.warning(msg)
         state["assistant_text"] = "Limited setup detected. Some features may be disabled."
     else:
@@ -357,14 +397,22 @@ def preflight():
     return True
 
 if __name__ == "__main__":
-    # 1. Establish Environment
-    if not os.path.exists("data"):
-        os.makedirs("data")
-        
-    instance_lock = os.path.join("data", "aether.lock")
-    if os.path.exists(instance_lock):
-        logger.error("Aether OS is already actively bound! Aborting duplicate boot.")
-        exit(0)
+    # 1. Establish Environment — Singleton via Windows Named Mutex
+    os.makedirs(data_path(), exist_ok=True)
+
+    # Kernel-level singleton: mutex auto-releases on process death, survives crashes
+    _mutex_handle = None
+    if sys.platform == "win32":
+        import ctypes
+        from ctypes import wintypes
+        _kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        ERROR_ALREADY_EXISTS = 183
+        _mutex_handle = _kernel32.CreateMutexW(None, True, "Global\\AetherOSSingleton")
+        if ctypes.get_last_error() == ERROR_ALREADY_EXISTS:
+            logger.error("Aether OS is already running! Aborting duplicate boot.")
+            if _mutex_handle:
+                _kernel32.CloseHandle(_mutex_handle)
+            sys.exit(0)
 
     # 2. Fast Boot Readiness Gate
     def wait_for_ready(timeout=5):
@@ -381,28 +429,29 @@ if __name__ == "__main__":
     if not wait_for_ready():
         logger.warning("LLM endpoint not detected after timeout. Attempting boot anyway...")
         
-    # 3. Permanent Recovery Loop
-    while True:
-        try:
-            if not preflight():
-                exit(1)
-            
-            logger.info("========== AETHER OS ACTIVE (SESSION START) ==========")
-            
-            # Native Tray & Listeners
-            threading.Thread(target=run_tray, daemon=True).start()
-            try:
-                threading.Thread(target=start_hotkey_listener, daemon=True).start()
-            except:
-                pass
-            
-            controller = AetherController()
-            controller.run()
-            
-        except KeyboardInterrupt:
-            logger.info("User initiated soft shutdown.")
-            break
-        except Exception as e:
-            logger.exception(f"CRITICAL SYSTEM FAILURE: {e}")
-            logger.info("Initiating self-healing protocol... restarting in 5s")
-            time.sleep(5)
+    # 3. One-time tray & hotkey initialization (BEFORE the recovery loop)
+    if not preflight():
+        exit(1)
+
+    threading.Thread(target=run_tray, daemon=True).start()
+    try:
+        threading.Thread(target=start_hotkey_listener, daemon=True).start()
+    except Exception:
+        pass
+
+    try:
+        logger.info("========== AETHER OS ACTIVE (SESSION START) ==========")
+
+        controller = AetherController()
+        controller.run()
+
+    except KeyboardInterrupt:
+        logger.info("User initiated soft shutdown.")
+    except Exception as e:
+        logger.exception(f"CRITICAL SYSTEM FAILURE: {e}")
+        _notify_user("Aether", "Aether hit an unexpected error. Open the tray panel and use Open Logs for details.")
+    finally:
+        # Mutex is auto-released by the OS when the process exits
+        if _mutex_handle:
+            _kernel32.CloseHandle(_mutex_handle)
+

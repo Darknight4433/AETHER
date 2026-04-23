@@ -1,8 +1,11 @@
-import ollama
 import json
 import os
+
+import ollama
 from loguru import logger
+
 from ui.state import state, update_log
+
 
 SYSTEM_PROMPT = """
 You are Aether Planner.
@@ -14,9 +17,10 @@ SEARCH_WEB {"query": string}
 TAKE_SCREENSHOT {}
 
 Rules:
-- Output ONLY JSON array wrapped in {"steps": ...}
+- Output ONLY JSON wrapped in {"steps": ...}
 - Use minimal steps
 """
+
 
 def create_plan(user_input):
     state["thought"] = f"Planning structure for: {user_input}"
@@ -31,14 +35,13 @@ def create_plan(user_input):
         response = client.generate(
             model=model,
             prompt=SYSTEM_PROMPT + "\nUser: " + user_input,
-            format="json", # Force json structured output
-            stream=False
+            format="json",
+            stream=False,
         )
-
-        text = response['response']
+        text = response["response"]
         return json.loads(text)
     except Exception as e:
         error_str = f"Plan parse failed: {e}"
-        logger.error(f"⚠️ {error_str}")
+        logger.error(error_str)
         state["error"] = error_str
         return {"steps": []}

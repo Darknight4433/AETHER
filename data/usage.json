@@ -1,0 +1,218 @@
+[
+  {
+    "action": "create_file",
+    "app": "Desktop",
+    "timestamp": "2026-04-22T19:00:24.138496",
+    "hour": 19,
+    "minute": 0,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "text": "test_max.txt"
+    }
+  },
+  {
+    "action": "read_file",
+    "app": "Desktop",
+    "timestamp": "2026-04-22T19:00:24.140838",
+    "hour": 19,
+    "minute": 0,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "text": "test_max.txt"
+    }
+  },
+  {
+    "action": "create_file",
+    "app": "Desktop",
+    "timestamp": "2026-04-22T19:08:07.180654",
+    "hour": 19,
+    "minute": 8,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "text": "test_max.txt"
+    }
+  },
+  {
+    "action": "read_file",
+    "app": "Desktop",
+    "timestamp": "2026-04-22T19:08:07.185724",
+    "hour": 19,
+    "minute": 8,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "text": "test_max.txt"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Desktop",
+    "timestamp": "2026-04-22T19:49:24.900442",
+    "hour": 19,
+    "minute": 49,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": ""
+    }
+  },
+  {
+    "action": "create_file",
+    "app": "Desktop",
+    "timestamp": "2026-04-22T20:40:50.972749",
+    "hour": 20,
+    "minute": 40,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "text": "test_max.txt"
+    }
+  },
+  {
+    "action": "read_file",
+    "app": "Desktop",
+    "timestamp": "2026-04-22T20:40:50.976651",
+    "hour": 20,
+    "minute": 40,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "text": "test_max.txt"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-04-23T09:15:22.044586",
+    "hour": 9,
+    "minute": 15,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Authenticate Your Email Address - vaishnavil4433@gmail.com - Gmail - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "explorer.exe",
+    "timestamp": "2026-04-23T10:05:21.758678",
+    "hour": 10,
+    "minute": 5,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Program Manager"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "pythonw.exe",
+    "timestamp": "2026-04-23T10:05:49.128337",
+    "hour": 10,
+    "minute": 5,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Aether Panel"
+    }
+  },
+  {
+    "action": "time",
+    "app": "Desktop",
+    "timestamp": "2026-04-23T10:06:07.181869",
+    "hour": 10,
+    "minute": 6,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "text": "what time is it"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-04-23T10:15:49.985111",
+    "hour": 10,
+    "minute": 15,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Chapter 85 - Elissa's Whirlwind Marriage 2022 - Manhwa - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-04-23T10:29:14.346057",
+    "hour": 10,
+    "minute": 29,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Chapter 67 - Anyone Can Beat the Original 2025 - Manhwa - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "explorer.exe",
+    "timestamp": "2026-04-23T10:33:54.036774",
+    "hour": 10,
+    "minute": 33,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "System tray overflow window."
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Code.exe",
+    "timestamp": "2026-04-23T10:36:31.411864",
+    "hour": 10,
+    "minute": 36,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "agent.py - Aether - Visual Studio Code"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Code.exe",
+    "timestamp": "2026-04-23T10:37:06.749391",
+    "hour": 10,
+    "minute": 37,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "agent.py - Aether - Visual Studio Code"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Code.exe",
+    "timestamp": "2026-04-23T10:37:06.754308",
+    "hour": 10,
+    "minute": 37,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "agent.py - Aether - Visual Studio Code"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Code.exe",
+    "timestamp": "2026-04-23T10:37:06.777687",
+    "hour": 10,
+    "minute": 37,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "agent.py - Aether - Visual Studio Code"
+    }
+  }
+]

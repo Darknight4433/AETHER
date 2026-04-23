@@ -193,82 +193,78 @@
   </div>
 
   <script>
-    async function fetchData() {
-      try {
-        let res = await fetch("http://127.0.0.1:8000/status");
-        let data = await res.json();
-        
-        let stat = data.status;
-        document.getElementById("status").innerText = stat;
-        document.getElementById("status-title").innerText = stat === 'idle' ? 'System Idle' : 'System Active';
-        
-        let p = document.getElementById("pulse");
-        let orb = document.getElementById("main-orb");
-        
-        if(stat.includes("listening")) { 
-            p.className = "pulse-dot listening"; 
-            orb.className = "core-orb listening";
+    window.updateDashboard = function(data) {
+        try {
+            let stat = data.status;
+            document.getElementById("status").innerText = stat;
+            document.getElementById("status-title").innerText = stat === 'idle' ? 'System Idle' : 'System Active';
+            
+            let p = document.getElementById("pulse");
+            let orb = document.getElementById("main-orb");
+            
+            if(stat.includes("listening")) { 
+                p.className = "pulse-dot listening"; 
+                orb.className = "core-orb listening";
+            }
+            else if(stat.includes("speaking")) { 
+                p.className = "pulse-dot speaking"; 
+                orb.className = "core-orb speaking";
+            }
+            else { 
+                p.className = "pulse-dot"; 
+                orb.className = "core-orb idle";
+            }
+
+            document.getElementById("action").innerText = data.last_action || 'None';
+            document.getElementById("thought").innerText = data.thought || 'Awaiting input...';
+            
+            // Stats from data
+            document.getElementById("latency").innerText = data.latency || "0.00s";
+            
+            let errBox = document.getElementById("err-container");
+            if(data.error) {
+                errBox.style.display = "block";
+                document.getElementById("error").innerText = data.error;
+            } else {
+                errBox.style.display = "none";
+            }
+
+            let autoBtn = document.getElementById("toggleAutoBtn");
+            autoBtn.className = data.autonomy ? "btn-toggle active" : "btn-toggle";
+            autoBtn.innerText = data.autonomy ? "Autonomous: ON" : "Autonomous: OFF";
+
+            let dndBtn = document.getElementById("toggleDNDBtn");
+            dndBtn.className = data.dnd ? "btn-toggle dnd active" : "btn-toggle dnd";
+            dndBtn.innerText = data.dnd ? "DND: ON" : "DND: OFF";
+
+            let logs = document.getElementById("logs");
+            logs.innerHTML = "";
+            (data.logs || []).forEach(l => {
+              let li = document.createElement("div");
+              li.className = "log-item";
+              li.innerHTML = l;
+              logs.appendChild(li);
+            });
+
+            document.getElementById("memory").innerText = JSON.stringify(data.memory, null, 2);
+
+        } catch(e) {
+            console.error("Dashboard update error:", e);
         }
-        else if(stat.includes("speaking")) { 
-            p.className = "pulse-dot speaking"; 
-            orb.className = "core-orb speaking";
-        }
-        else { 
-            p.className = "pulse-dot"; 
-            orb.className = "core-orb idle";
-        }
+    }
 
-        document.getElementById("action").innerText = data.last_action || 'None';
-        document.getElementById("thought").innerText = data.thought || 'Awaiting input...';
-        document.getElementById("latency").innerText = data.latency;
-        
-        let errBox = document.getElementById("err-container");
-        if(data.error) {
-            errBox.style.display = "block";
-            document.getElementById("error").innerText = data.error;
-        } else {
-            errBox.style.display = "none";
-        }
-
-        let autoBtn = document.getElementById("toggleAutoBtn");
-        autoBtn.className = data.autonomy ? "btn-toggle active" : "btn-toggle";
-        autoBtn.innerText = data.autonomy ? "Autonomous: ON" : "Autonomous: OFF";
-
-        let dndBtn = document.getElementById("toggleDNDBtn");
-        dndBtn.className = data.dnd ? "btn-toggle dnd active" : "btn-toggle dnd";
-        dndBtn.innerText = data.dnd ? "DND: ON" : "DND: OFF";
-
-        let logs = document.getElementById("logs");
-        logs.innerHTML = "";
-        data.logs.forEach(l => {
-          let li = document.createElement("div");
-          li.className = "log-item";
-          let d = new Date();
-          let timeNow = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0') + ':' + d.getSeconds().toString().padStart(2, '0');
-          li.innerHTML = `<span class="time">[${timeNow}]</span> ${l}`;
-          logs.appendChild(li);
-        });
-
-        // Safe JSON parsing for memory
-        document.getElementById("memory").innerText = JSON.stringify(data.memory, null, 2);
-
-      } catch(e) {
-        console.error("Dashboard backend disconnected.");
+    function toggleAuto() {
+      if (window.pywebview && window.pywebview.api) {
+        window.pywebview.api.toggle_autonomy();
       }
     }
 
-    async function toggleAuto() {
-      await fetch("http://127.0.0.1:8000/toggle_autonomy", {method: "POST"});
-      fetchData();
+    function toggleDND() {
+      if (window.pywebview && window.pywebview.api) {
+        window.pywebview.api.toggle_dnd();
+      }
     }
-
-    async function toggleDND() {
-      await fetch("http://127.0.0.1:8000/toggle_dnd", {method: "POST"});
-      fetchData();
-    }
-
-    setInterval(fetchData, 1000);
-    fetchData();
   </script>
+
 </body>
 </html>

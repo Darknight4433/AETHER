@@ -1,21 +1,24 @@
 import os
 import webbrowser
-import pywhatkit
+
+
+def _start_command(target):
+    os.system(f'start "" "{target}"')
 
 def open_app(text):
-    text = text.lower()
+    text = (text or "").lower()
     if "chrome" in text:
-        os.system("start chrome")
+        _start_command("chrome")
         return "Opening Chrome"
 
     if "notepad" in text:
-        os.system("start notepad")
+        _start_command("notepad")
         return "Opening Notepad"
 
     return "App not recognized"
 
 def search_web(text):
-    text = text.lower()
+    text = (text or "").lower()
     # Strip keywords
     query = text.replace("search for", "").replace("search", "").replace("google", "").strip()
     if not query:
@@ -26,11 +29,15 @@ def search_web(text):
     return f"Searching for {query}"
 
 def play_song(text):
-    text = text.lower()
+    text = (text or "").lower()
     song = text.replace("play", "").replace("song", "").strip()
     if not song:
         song = "something random"
     
-    # pywhatkit will automatically open youtube and click the first video
-    pywhatkit.playonyt(song)
+    try:
+        import pywhatkit
+        pywhatkit.playonyt(song)
+    except Exception:
+        query = song.replace(" ", "+")
+        webbrowser.open(f"https://www.youtube.com/results?search_query={query}")
     return f"Playing {song}"

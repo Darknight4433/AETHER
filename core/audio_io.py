@@ -5,8 +5,6 @@ import whisper
 import queue
 import time
 from loguru import logger
-import tempfile
-import soundfile as sf
 from ui.state import state
 
 _whisper_model = None
@@ -65,13 +63,21 @@ class AudioInterface:
 
         logger.info("Listening...")
         
-        stream = sd.InputStream(
-            samplerate=self.samplerate, 
-            channels=self.channels,
-            device=self.device_index,
-            callback=audio_callback,
-            dtype='float32'
-        )
+        try:
+            stream = sd.InputStream(
+                samplerate=self.samplerate,
+                channels=self.channels,
+                device=self.device_index,
+                callback=audio_callback,
+                dtype='float32'
+            )
+        except Exception as e:
+            logger.error(f"Microphone stream init failed: {e}")
+            state["status"] = "idle"
+            state["audio_level"] = 0.0
+            state["waveform"] = [0] * 64
+            state["audio_source"] = "mic"
+            return ""
         
         audio_data = []
         is_speaking = False
@@ -112,7 +118,7 @@ class AudioInterface:
                         break
 
         # If they spoke for less than 0.5 seconds, probably just noise
-        if not audio_data or (time.time() - started_talking_time < 0.5):
+        if not audio_data or started_talking_time is None or (time.time() - started_talking_time < 0.5):
             state["status"] = "idle"
             state["audio_level"] = 0.0
             state["waveform"] = [0]*64
@@ -120,26 +126,23 @@ class AudioInterface:
             return ""
 
         # Concatenate chunks
-        recording = np.concatenate(audio_data, axis=0).flatten()
-        
-        # Save to temp file since Whisper expects a file path
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_wav:
-            temp_path = temp_wav.name
-            sf.write(temp_path, recording, self.samplerate)
-        
+        recording = np.concatenate(audio_data, axis=0).flatten().astype(np.float32)
+        max_amp = float(np.max(np.abs(recording))) if recording.size else 0.0
+        if max_amp > 0:
+            recording = recording / max_amp
+
         logger.info("Processing speech to text...")
         try:
-            result = model.transcribe(temp_path, fp16=False)
+            result = model.transcribe(recording, fp16=False)
             text = result["text"].strip()
             logger.info(f"User Transcribed: {text}")
             state["status"] = "idle"
+            state["audio_level"] = 0.0
+            state["waveform"] = [0] * 64
             state["audio_source"] = "mic"
             return text
         except Exception as e:
-            if "WinError 2" in str(e):
-                logger.error("Whisper transcription error: FFmpeg not found! Please install FFmpeg and add it to your PATH.")
-            else:
-                logger.error(f"Whisper transcription error: {e}")
+            logger.error(f"Whisper transcription error: {e}")
             state["status"] = "idle"
             state["audio_level"] = 0.0
             state["waveform"] = [0]*64
@@ -148,5 +151,4 @@ class AudioInterface:
         finally:
             state["audio_level"] = 0.0
             state["waveform"] = [0]*64
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
+            state["audio_source"] = "mic"
