@@ -1,3 +1,9 @@
 {
-    "python-envs.defaultEnvManager": "ms-python.python:system"
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "chat.tools.terminal.autoApprove": {
+        "/^cd \"c:\\\\Users\\\\Vaishnavi L\\\\OneDrive\\\\Desktop\\\\Aether\"; git add \\.; git commit -m \"Add ffmpeg\\.zip and test_ollama_tts\\.py; update data/usage\\.json\"; git push$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
 }

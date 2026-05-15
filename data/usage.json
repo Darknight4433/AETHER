@@ -214,5 +214,845 @@
     "meta": {
       "title": "agent.py - Aether - Visual Studio Code"
     }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-04-23T13:12:31.628463",
+    "hour": 13,
+    "minute": 12,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Darknight4433 (Vaishnavi L) - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-04-23T13:13:50.313479",
+    "hour": 13,
+    "minute": 13,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Chapter 45 - The Flower with a Sword 2025 - Manhwa - Opera"
+    }
+  },
+  {
+    "action": "create_file",
+    "app": "Desktop",
+    "timestamp": "2026-04-23T13:14:52.878671",
+    "hour": 13,
+    "minute": 14,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "text": "test_max.txt"
+    }
+  },
+  {
+    "action": "read_file",
+    "app": "Desktop",
+    "timestamp": "2026-04-23T13:14:52.882413",
+    "hour": 13,
+    "minute": 14,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "text": "test_max.txt"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-04-23T13:20:23.009347",
+    "hour": 13,
+    "minute": 20,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Chapter 47 - The Flower with a Sword 2025 - Manhwa - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "YourPhoneAppProxy.exe",
+    "timestamp": "2026-04-23T20:18:21.606535",
+    "hour": 20,
+    "minute": 18,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "OnePlus Nord CE 3 Lite 5G"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Discord.exe",
+    "timestamp": "2026-04-23T20:18:22.680557",
+    "hour": 20,
+    "minute": 18,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Gaming\ud83c\udfb2 | Rajan Team Only - Discord"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "explorer.exe",
+    "timestamp": "2026-04-24T16:01:15.525146",
+    "hour": 16,
+    "minute": 1,
+    "weekday": "Friday",
+    "day_type": "weekday",
+    "meta": {
+      "title": ""
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Antigravity.exe",
+    "timestamp": "2026-04-24T19:37:17.211212",
+    "hour": 19,
+    "minute": 37,
+    "weekday": "Friday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "vaishnav_scify_portfolio - Antigravity - firestore.indexes.json"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-04-25T11:16:13.201036",
+    "hour": 11,
+    "minute": 16,
+    "weekday": "Saturday",
+    "day_type": "weekend",
+    "meta": {
+      "title": "Instagram \u2022 Messages - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Discord.exe",
+    "timestamp": "2026-04-25T20:17:52.986108",
+    "hour": 20,
+    "minute": 17,
+    "weekday": "Saturday",
+    "day_type": "weekend",
+    "meta": {
+      "title": "Gaming\ud83c\udfb2 | Rajan Team Only - Discord"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "ShellExperienceHost.exe",
+    "timestamp": "2026-04-26T20:47:20.286807",
+    "hour": 20,
+    "minute": 47,
+    "weekday": "Sunday",
+    "day_type": "weekend",
+    "meta": {
+      "title": "Jump List for Discord"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-04-26T20:47:21.332650",
+    "hour": 20,
+    "minute": 47,
+    "weekday": "Sunday",
+    "day_type": "weekend",
+    "meta": {
+      "title": "GX Corner - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-04-27T09:20:50.056887",
+    "hour": 9,
+    "minute": 20,
+    "weekday": "Monday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Watch Maid Sama! in HD Online for Free - HiAnime - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Discord.exe",
+    "timestamp": "2026-04-27T14:49:35.532236",
+    "hour": 14,
+    "minute": 49,
+    "weekday": "Monday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "@SpideyBeing - Discord"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "cmd.exe",
+    "timestamp": "2026-04-27T18:09:10.532845",
+    "hour": 18,
+    "minute": 9,
+    "weekday": "Monday",
+    "day_type": "weekday",
+    "meta": {
+      "title": ""
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-04-27T20:03:08.572848",
+    "hour": 20,
+    "minute": 3,
+    "weekday": "Monday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Instagram \u2022 Messages - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-04-28T09:03:20.603742",
+    "hour": 9,
+    "minute": 3,
+    "weekday": "Tuesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "GX Corner - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "ShellHost.exe",
+    "timestamp": "2026-04-28T19:05:13.060490",
+    "hour": 19,
+    "minute": 5,
+    "weekday": "Tuesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Quick settings"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-04-29T08:51:43.557037",
+    "hour": 8,
+    "minute": 51,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Watch Maid Sama! in HD Online for Free - HiAnime - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "explorer.exe",
+    "timestamp": "2026-04-29T15:18:01.512462",
+    "hour": 15,
+    "minute": 18,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": ""
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-04-29T19:19:56.232113",
+    "hour": 19,
+    "minute": 19,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "All Mail - vaishnavil4433@gmail.com - Gmail - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-04-30T09:26:16.667660",
+    "hour": 9,
+    "minute": 26,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Watch Maid Sama! Play with Your Husband \u2665 Anime Online | HiAnime - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "WhatsApp.Root.exe",
+    "timestamp": "2026-04-30T14:01:15.638831",
+    "hour": 14,
+    "minute": 1,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "WhatsApp"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Discord.exe",
+    "timestamp": "2026-04-30T21:19:43.238435",
+    "hour": 21,
+    "minute": 19,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Quests - Discord"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "WinDirStat.exe",
+    "timestamp": "2026-05-01T10:59:15.458945",
+    "hour": 10,
+    "minute": 59,
+    "weekday": "Friday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "WinDirStat - C:  (Administrator)"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "explorer.exe",
+    "timestamp": "2026-05-01T10:59:16.471485",
+    "hour": 10,
+    "minute": 59,
+    "weekday": "Friday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "C:\\Users\\Vaishnavi L - File Explorer"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "HTGame.exe",
+    "timestamp": "2026-05-01T19:43:11.441938",
+    "hour": 19,
+    "minute": 43,
+    "weekday": "Friday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "NTE  "
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "explorer.exe",
+    "timestamp": "2026-05-01T22:06:37.938434",
+    "hour": 22,
+    "minute": 6,
+    "weekday": "Friday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Program Manager"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Discord.exe",
+    "timestamp": "2026-05-01T22:06:39.261872",
+    "hour": 22,
+    "minute": 6,
+    "weekday": "Friday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "#games | TheKnight'server - Discord"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "LockApp.exe",
+    "timestamp": "2026-05-02T09:13:37.442321",
+    "hour": 9,
+    "minute": 13,
+    "weekday": "Saturday",
+    "day_type": "weekend",
+    "meta": {
+      "title": "Windows Default Lock Screen"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "explorer.exe",
+    "timestamp": "2026-05-02T13:50:08.027628",
+    "hour": 13,
+    "minute": 50,
+    "weekday": "Saturday",
+    "day_type": "weekend",
+    "meta": {
+      "title": ""
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Discord.exe",
+    "timestamp": "2026-05-03T12:12:38.770776",
+    "hour": 12,
+    "minute": 12,
+    "weekday": "Sunday",
+    "day_type": "weekend",
+    "meta": {
+      "title": "Friends - Discord"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-03T19:41:59.403333",
+    "hour": 19,
+    "minute": 41,
+    "weekday": "Sunday",
+    "day_type": "weekend",
+    "meta": {
+      "title": "Watch My Hero Academia: More in HD Online for Free - HiAnime - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "cmd.exe",
+    "timestamp": "2026-05-04T09:22:29.363335",
+    "hour": 9,
+    "minute": 22,
+    "weekday": "Monday",
+    "day_type": "weekday",
+    "meta": {
+      "title": ""
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "cmd.exe",
+    "timestamp": "2026-05-04T14:15:32.863043",
+    "hour": 14,
+    "minute": 15,
+    "weekday": "Monday",
+    "day_type": "weekday",
+    "meta": {
+      "title": ""
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Antigravity.exe",
+    "timestamp": "2026-05-04T18:58:21.954643",
+    "hour": 18,
+    "minute": 58,
+    "weekday": "Monday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "enteprofile - Antigravity - Nav.jsx"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-04T19:54:42.554597",
+    "hour": 19,
+    "minute": 54,
+    "weekday": "Monday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Comix - Read Comics Online for Free - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "cmd.exe",
+    "timestamp": "2026-05-04T19:54:43.760602",
+    "hour": 19,
+    "minute": 54,
+    "weekday": "Monday",
+    "day_type": "weekday",
+    "meta": {
+      "title": ""
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Taskmgr.exe",
+    "timestamp": "2026-05-05T09:13:01.135142",
+    "hour": 9,
+    "minute": 13,
+    "weekday": "Tuesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Task Manager"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-06T09:12:29.615746",
+    "hour": 9,
+    "minute": 12,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Chapter 33 - The Youngest Daughter of the Villainous Duke 2022 - Manhwa - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "ShellHost.exe",
+    "timestamp": "2026-05-06T09:47:48.400654",
+    "hour": 9,
+    "minute": 47,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Quick settings"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-06T13:34:38.222848",
+    "hour": 13,
+    "minute": 34,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "GX Corner - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Spotify.exe",
+    "timestamp": "2026-05-06T20:58:08.838977",
+    "hour": 20,
+    "minute": 58,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Spotify Free"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "HTGame.exe",
+    "timestamp": "2026-05-06T20:58:09.952924",
+    "hour": 20,
+    "minute": 58,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "NTE  "
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "HTGame.exe",
+    "timestamp": "2026-05-07T09:20:02.706242",
+    "hour": 9,
+    "minute": 20,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "NTE  "
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-07T19:28:28.020951",
+    "hour": 19,
+    "minute": 28,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "GX Corner - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "SetupHost.exe",
+    "timestamp": "2026-05-07T21:30:36.199708",
+    "hour": 21,
+    "minute": 30,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Windows 11 Setup"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-08T09:22:56.947215",
+    "hour": 9,
+    "minute": 22,
+    "weekday": "Friday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "GX Corner - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "HTGame.exe",
+    "timestamp": "2026-05-08T14:04:48.402913",
+    "hour": 14,
+    "minute": 4,
+    "weekday": "Friday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "NTE  "
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-08T19:27:09.784154",
+    "hour": 19,
+    "minute": 27,
+    "weekday": "Friday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "GX Corner - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-09T09:52:53.593469",
+    "hour": 9,
+    "minute": 52,
+    "weekday": "Saturday",
+    "day_type": "weekend",
+    "meta": {
+      "title": "Browser - HiAnime - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "explorer.exe",
+    "timestamp": "2026-05-09T18:55:03.917358",
+    "hour": 18,
+    "minute": 55,
+    "weekday": "Saturday",
+    "day_type": "weekend",
+    "meta": {
+      "title": "Program Manager"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-09T21:46:46.659742",
+    "hour": 21,
+    "minute": 46,
+    "weekday": "Saturday",
+    "day_type": "weekend",
+    "meta": {
+      "title": "(2) Instagram \u2022 Messages - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "WhatsApp.Root.exe",
+    "timestamp": "2026-05-11T09:26:07.013902",
+    "hour": 9,
+    "minute": 26,
+    "weekday": "Monday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "WhatsApp"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-11T11:24:20.754725",
+    "hour": 11,
+    "minute": 24,
+    "weekday": "Monday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "My Husband Changes Every Night \u00b7 Ch.10 - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-11T19:06:15.557433",
+    "hour": 19,
+    "minute": 6,
+    "weekday": "Monday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "ChatGPT - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-12T09:30:15.352940",
+    "hour": 9,
+    "minute": 30,
+    "weekday": "Tuesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Melting Slowly \u00b7 Ch.32 - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-12T11:03:15.064393",
+    "hour": 11,
+    "minute": 3,
+    "weekday": "Tuesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Speed Dial - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-12T17:48:45.002501",
+    "hour": 17,
+    "minute": 48,
+    "weekday": "Tuesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "518-602 is your Hack Club login code - vaishnavil4433@gmail.com - Gmail - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-12T20:01:46.451296",
+    "hour": 20,
+    "minute": 1,
+    "weekday": "Tuesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "518-602 is your Hack Club login code - vaishnavil4433@gmail.com - Gmail - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Discord.exe",
+    "timestamp": "2026-05-13T09:18:28.799927",
+    "hour": 9,
+    "minute": 18,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "@\ud835\udcd7\ud835\udcee\ud835\udcf5\ud835\udcf2\ud835\udd01 - Discord"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-13T14:18:03.322360",
+    "hour": 14,
+    "minute": 18,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "How To Reject My Obsessive Ex-Husband \u00b7 Ch.79 - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "chrome.exe",
+    "timestamp": "2026-05-13T19:14:32.871944",
+    "hour": 19,
+    "minute": 14,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "EcoPledge \u2013 Realtime Database \u2013 Data \u2013 Firebase console - Google Chrome"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "explorer.exe",
+    "timestamp": "2026-05-14T09:09:40.645080",
+    "hour": 9,
+    "minute": 9,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": ""
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-14T09:09:41.656204",
+    "hour": 9,
+    "minute": 9,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Speed Dial - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "explorer.exe",
+    "timestamp": "2026-05-14T19:37:09.694387",
+    "hour": 19,
+    "minute": 37,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": ""
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "HTGame.exe",
+    "timestamp": "2026-05-14T19:37:11.752532",
+    "hour": 19,
+    "minute": 37,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "NTE  "
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Spotify.exe",
+    "timestamp": "2026-05-15T09:52:50.402573",
+    "hour": 9,
+    "minute": 52,
+    "weekday": "Friday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "ryo (supercell) - World is Mine - CPK! Remix"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-15T14:06:38.158404",
+    "hour": 14,
+    "minute": 6,
+    "weekday": "Friday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "I Was Just Having Fun With The Time Limit \u00b7 Ch.50 - Opera"
+    }
   }
 ]
