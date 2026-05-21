@@ -1054,5 +1054,173 @@
     "meta": {
       "title": "I Was Just Having Fun With The Time Limit \u00b7 Ch.50 - Opera"
     }
+  },
+  {
+    "action": "app_switch",
+    "app": "chrome.exe",
+    "timestamp": "2026-05-15T18:10:53.163735",
+    "hour": 18,
+    "minute": 10,
+    "weekday": "Friday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "DDR5 LAPTOP RAM - Google Shopping - Google Chrome"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Spotify.exe",
+    "timestamp": "2026-05-16T09:35:38.122385",
+    "hour": 9,
+    "minute": 35,
+    "weekday": "Saturday",
+    "day_type": "weekend",
+    "meta": {
+      "title": "Daichi Miura - Blizzard"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Discord.exe",
+    "timestamp": "2026-05-16T12:36:53.445415",
+    "hour": 12,
+    "minute": 36,
+    "weekday": "Saturday",
+    "day_type": "weekend",
+    "meta": {
+      "title": " - Discord"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "explorer.exe",
+    "timestamp": "2026-05-16T20:09:05.132006",
+    "hour": 20,
+    "minute": 9,
+    "weekday": "Saturday",
+    "day_type": "weekend",
+    "meta": {
+      "title": ""
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Discord.exe",
+    "timestamp": "2026-05-17T09:25:36.872448",
+    "hour": 9,
+    "minute": 25,
+    "weekday": "Sunday",
+    "day_type": "weekend",
+    "meta": {
+      "title": "#general | Rajan Team Only - Discord"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Discord.exe",
+    "timestamp": "2026-05-18T09:14:15.213811",
+    "hour": 9,
+    "minute": 14,
+    "weekday": "Monday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Friends - Discord"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Discord.exe",
+    "timestamp": "2026-05-18T19:25:31.878553",
+    "hour": 19,
+    "minute": 25,
+    "weekday": "Monday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "#\ud83c\udd94\uff5cco-op-uid | Vector Recite Lounge - Discord"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-19T08:54:07.695186",
+    "hour": 8,
+    "minute": 54,
+    "weekday": "Tuesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Instagram \u2022 Messages - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "Discord.exe",
+    "timestamp": "2026-05-19T19:33:28.869835",
+    "hour": 19,
+    "minute": 33,
+    "weekday": "Tuesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "@Abhiram annan - Discord"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-20T09:22:33.586364",
+    "hour": 9,
+    "minute": 22,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "I Only Need the Duke's Child \u00b7 Ch.12 - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "TranslucentTB.exe",
+    "timestamp": "2026-05-20T19:14:58.621450",
+    "hour": 19,
+    "minute": 14,
+    "weekday": "Wednesday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "TranslucentTB"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-21T09:14:01.639974",
+    "hour": 9,
+    "minute": 14,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "Comix - Read Comics online for free - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "opera.exe",
+    "timestamp": "2026-05-21T14:40:46.678296",
+    "hour": 14,
+    "minute": 40,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": "(1) Instagram \u2022 Messages - Opera"
+    }
+  },
+  {
+    "action": "app_switch",
+    "app": "explorer.exe",
+    "timestamp": "2026-05-21T17:36:40.687560",
+    "hour": 17,
+    "minute": 36,
+    "weekday": "Thursday",
+    "day_type": "weekday",
+    "meta": {
+      "title": ""
+    }
   }
 ]
